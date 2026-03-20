@@ -1,0 +1,29 @@
+[
+  {
+    "id": "ol-world",
+    "title": "World Overview",
+    "description": "A simple world map using OpenStreetMap tiles, rendered with OpenLayers.",
+    "library": "OpenLayers",
+    "libraryColor": "#4a90d9",
+    "thumbnail": "thumb.png",
+    "tags": ["osm", "raster", "tiles"]
+  },
+  {
+    "id": "maplibre-city",
+    "title": "City Explorer",
+    "description": "Smooth vector tile map with MapLibre GL JS. Pan and zoom around any city.",
+    "library": "MapLibre",
+    "libraryColor": "#47b881",
+    "thumbnail": "thumb.png",
+    "tags": ["vector", "tiles", "gl"]
+  },
+  {
+    "id": "cesium-globe",
+    "title": "3D Globe",
+    "description": "An interactive 3D globe using CesiumJS. Rotate and zoom the entire Earth.",
+    "library": "Cesium",
+    "libraryColor": "#e67e22",
+    "thumbnail": "thumb.png",
+    "tags": ["3d", "globe", "terrain"]
+  }
+]

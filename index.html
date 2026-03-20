@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Map Collection</title>
+  <link rel="stylesheet" href="assets/gallery.css" />
+</head>
+<body>
+  <header>
+    <h1>🗺️ Map Collection</h1>
+    <p>A personal collection of interactive maps using various mapping libraries.</p>
+  </header>
+
+  <div class="gallery" id="gallery">
+    <p style="color: #8b8fa8; text-align:center; grid-column:1/-1;">Loading maps…</p>
+  </div>
+
+  <footer>
+    <p>Built with OpenLayers · MapLibre · Cesium · Hosted on GitHub Pages</p>
+  </footer>
+
+  <script>
+    const PLACEHOLDER_ICONS = {
+      'OpenLayers': '🌍',
+      'MapLibre': '🗺️',
+      'Cesium': '🌐',
+    };
+
+    async function loadGallery() {
+      const gallery = document.getElementById('gallery');
+      try {
+        const res = await fetch('maps/maps.json');
+        if (!res.ok) throw new Error('Failed to fetch maps.json');
+        const maps = await res.json();
+
+        gallery.innerHTML = maps.map(m => {
+          const icon = PLACEHOLDER_ICONS[m.library] || '📍';
+          const thumbHtml = `
+            <div class="card-thumb">
+              <span class="placeholder-icon">${icon}</span>
+            </div>`;
+          // if thumb.png exists, we'd swap it in; for now always use placeholder
+          const tags = (m.tags || []).map(t => `<span class="tag">${t}</span>`).join('');
+          return `
+            <a class="card" href="maps/${m.id}/index.html">
+              ${thumbHtml}
+              <div class="card-body">
+                <div class="card-title">${m.title}</div>
+                <div class="card-desc">${m.description}</div>
+                <div class="card-footer">
+                  <span class="badge-lib" style="background:${m.libraryColor}">${m.library}</span>
+                  ${tags}
+                </div>
+              </div>
+            </a>`;
+        }).join('');
+      } catch (e) {
+        gallery.innerHTML = `<p style="color:#e55;grid-column:1/-1">Error loading maps: ${e.message}</p>`;
+      }
+    }
+
+    loadGallery();
+  </script>
+</body>
+</html>

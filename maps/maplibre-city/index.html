@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>City Explorer — MapLibre</title>
+  <!-- MapLibre GL JS -->
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <!-- Shared styles -->
+  <link rel="stylesheet" href="../../assets/gallery.css" />
+  <style>
+    html, body { height: 100%; margin: 0; }
+    #map { width: 100%; height: 100vh; }
+    .map-info {
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      background: rgba(15,17,23,0.85);
+      backdrop-filter: blur(8px);
+      border: 1px solid #2a2d3a;
+      color: #e8eaf0;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    .map-info h3 { margin-bottom: 0.25rem; font-size: 0.9rem; }
+    .map-info p { color: #8b8fa8; }
+  </style>
+</head>
+<body>
+  <a class="back-btn" href="../../index.html">← Gallery</a>
+  <div id="map"></div>
+  <div class="map-info">
+    <h3>🗺️ City Explorer</h3>
+    <p>Library: MapLibre GL JS · Style: OpenFreeMap</p>
+  </div>
+
+  <script>
+    const map = new maplibregl.Map({
+      container: 'map',
+      // OpenFreeMap — free, no API key needed
+      style: 'https://tiles.openfreemap.org/styles/liberty',
+      center: [106.8456, -6.2088], // Jakarta
+      zoom: 11
+    });
+
+    map.addControl(new maplibregl.NavigationControl(), 'top-right');
+  </script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>3D Globe — Cesium</title>
+  <!-- CesiumJS -->
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.122/Build/Cesium/Cesium.js"></script>
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.122/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
+  <!-- Shared styles -->
+  <link rel="stylesheet" href="../../assets/gallery.css" />
+  <style>
+    html, body { height: 100%; margin: 0; overflow: hidden; }
+    #cesiumContainer { width: 100%; height: 100vh; }
+    .map-info {
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      background: rgba(15,17,23,0.85);
+      backdrop-filter: blur(8px);
+      border: 1px solid #2a2d3a;
+      color: #e8eaf0;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      z-index: 100;
+    }
+    .map-info h3 { margin-bottom: 0.25rem; font-size: 0.9rem; }
+    .map-info p { color: #8b8fa8; }
+    /* Hide Cesium default logo/credits bar a bit */
+    .cesium-viewer-bottom { font-size: 0.65rem; }
+  </style>
+</head>
+<body>
+  <a class="back-btn" href="../../index.html">← Gallery</a>
+  <div id="cesiumContainer"></div>
+  <div class="map-info">
+    <h3>🌐 3D Globe</h3>
+    <p>Library: CesiumJS · Tiles: Bing / OSM</p>
+  </div>
+
+  <script>
+    // Use default token — for production, set your own at https://cesium.com/ion/tokens
+    // Cesium.Ion.defaultAccessToken = 'YOUR_TOKEN_HERE';
+
+    const viewer = new Cesium.Viewer('cesiumContainer', {
+      // Use OSM buildings layer (no token needed for basic globe)
+      imageryProvider: new Cesium.OpenStreetMapImageryProvider({
+        url: 'https://tile.openstreetmap.org/'
+      }),
+      baseLayerPicker: false,
+      geocoder: false,
+      homeButton: true,
+      sceneModePicker: true,
+      navigationHelpButton: false,
+      animation: false,
+      timeline: false,
+      fullscreenButton: false,
+      terrainProvider: new Cesium.EllipsoidTerrainProvider(),
+    });
+
+    // Start with a nice view of Earth
+    viewer.camera.setView({
+      destination: Cesium.Cartesian3.fromDegrees(20, 10, 20000000)
+    });
+  </script>
+</body>
+</html>
