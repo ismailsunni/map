@@ -2,7 +2,7 @@
 
 A personal gallery of interactive maps built with various mapping libraries.
 
-**Live site:** https://ismailsunni.github.io/map/
+**Live site:** https://ismailsunni.id/map/
 
 ## Maps
 
