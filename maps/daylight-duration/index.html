@@ -247,6 +247,77 @@
     }
     .city-value.special { color: #f59e0b; } /* polar night / midnight sun */
 
+    /* ── About button ── */
+    #about-btn {
+      position: absolute; top: 1rem; right: 1.25rem; z-index: 10;
+      background: rgba(15,17,23,0.85); backdrop-filter: blur(10px);
+      border: 1px solid #2a2d3a; color: #8b8fa8;
+      padding: 0.4rem 0.85rem; border-radius: 8px;
+      font-size: 0.82rem; font-family: inherit;
+      cursor: pointer; transition: all 0.15s;
+    }
+    #about-btn:hover { background: rgba(30,34,51,0.95); color: #e8eaf0; border-color: #4a6a99; }
+
+    /* ── About modal ── */
+    #about-overlay {
+      display: none; position: fixed; inset: 0; z-index: 200;
+      background: rgba(0,0,0,0.65); backdrop-filter: blur(4px);
+      align-items: center; justify-content: center; padding: 1rem;
+    }
+    #about-overlay.open { display: flex; }
+    #about-panel {
+      background: #13151f; border: 1px solid #2a2d3a; border-radius: 14px;
+      width: 100%; max-width: 680px; max-height: 88vh;
+      display: flex; flex-direction: column;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      overflow: hidden;
+    }
+    #about-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1rem 1.25rem 0.75rem;
+      border-bottom: 1px solid #2a2d3a; flex-shrink: 0;
+    }
+    #about-header h2 { font-size: 1rem; color: #e8eaf0; margin: 0; font-weight: 600; }
+    #about-close {
+      background: #1e2233; border: 1px solid #2a2d3a; color: #8b8fa8;
+      width: 28px; height: 28px; border-radius: 7px; cursor: pointer;
+      font-size: 1rem; display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s; flex-shrink: 0;
+    }
+    #about-close:hover { background: #2a2d3a; color: #e8eaf0; }
+    #about-body {
+      overflow-y: auto; padding: 1.1rem 1.25rem 1.4rem;
+      display: flex; flex-direction: column; gap: 1.4rem;
+      color: #c8ccdc; font-size: 0.875rem; line-height: 1.65;
+      scrollbar-width: thin; scrollbar-color: #2a2d3a transparent;
+    }
+    .about-section h3 {
+      color: #e8eaf0; font-size: 0.9rem; font-weight: 700;
+      margin: 0 0 0.45rem; display: flex; align-items: center; gap: 0.4rem;
+    }
+    .about-section p { margin: 0 0 0.5rem; }
+    .about-section p:last-child { margin-bottom: 0; }
+    .about-section ul { margin: 0.3rem 0 0 1rem; padding: 0; }
+    .about-section li { margin-bottom: 0.35rem; }
+    .about-divider { border: none; border-top: 1px solid #2a2d3a; margin: 0; }
+    .about-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-top: 0.5rem; }
+    .about-table th { text-align: left; color: #8b8fa8; font-weight: 600; padding: 0.3rem 0.5rem; border-bottom: 1px solid #2a2d3a; }
+    .about-table td { padding: 0.3rem 0.5rem; vertical-align: top; border-bottom: 1px solid #1a1d27; color: #c8ccdc; }
+    .about-table td:first-child { color: #e8eaf0; font-weight: 600; white-space: nowrap; }
+    .about-table td .angle { color: #7fb3e8; }
+    a.ref { color: #7fb3e8; text-decoration: none; border-bottom: 1px dashed #3a5a80; }
+    a.ref:hover { color: #93c4f0; border-bottom-color: #7fb3e8; }
+    .color-chip {
+      display: inline-block; width: 10px; height: 10px; border-radius: 2px;
+      vertical-align: middle; margin-right: 3px; flex-shrink: 0;
+    }
+    .badge {
+      display: inline-block; font-size: 0.68rem; padding: 1px 7px;
+      border-radius: 4px; vertical-align: middle; font-weight: 600;
+    }
+    .badge-day  { background: #1e3050; color: #7fb3e8; border: 1px solid #3a5a90; }
+    .badge-fast { background: #2a1a10; color: #e8a87c; border: 1px solid #6a3a20; }
+
     /* ── Minimizable controls ── */
     .ctrl-header {
       display: flex; align-items: center; justify-content: space-between;
@@ -296,6 +367,217 @@
 
   <!-- Tooltip -->
   <div id="tooltip"></div>
+
+  <!-- About button -->
+  <button id="about-btn">ℹ️ About</button>
+
+  <!-- About modal -->
+  <div id="about-overlay">
+    <div id="about-panel">
+      <div id="about-header">
+        <h2>🗺️ About: Daylight &amp; Fasting Duration Map</h2>
+        <button id="about-close" title="Close">✕</button>
+      </div>
+      <div id="about-body">
+
+        <!-- What this map shows -->
+        <div class="about-section">
+          <h3>🌍 What this map shows</h3>
+          <p>A color-coded overlay showing how many hours of <strong>daylight</strong> (or <strong>fasting</strong>) each latitude receives on any chosen date. The gradient updates in real time as you scrub the date or hit Play to animate through the full year.</p>
+          <p>The key insight: <strong>day length depends only on latitude and day of year</strong> — not longitude. This is why the overlay appears as horizontal bands. Two cities at the same latitude always experience the same sunrise-to-sunset duration, regardless of how far apart they are.</p>
+        </div>
+
+        <hr class="about-divider" />
+
+        <!-- Daylight duration -->
+        <div class="about-section">
+          <h3>☀️ Daylight Duration <span class="badge badge-day">Daylight mode</span></h3>
+          <p>The time between <strong>sunrise</strong> and <strong>sunset</strong> on a given day. Calculated using the standard solar hour-angle formula:</p>
+          <ul>
+            <li><strong>Solar declination</strong> — how tilted Earth's axis is toward/away from the Sun for that date (±23.45°).</li>
+            <li><strong>Hour angle at sunrise</strong> — the angle from solar noon when the sun crosses the horizon.</li>
+            <li>Day length = <code>2 × arccos(−tan(lat) × tan(decl)) / π × 12 h</code></li>
+          </ul>
+          <p>Special cases: <strong>Polar night</strong> (0 h) — the sun never rises; <strong>Midnight sun</strong> (24 h) — the sun never sets. Both occur in the Arctic/Antarctic circles and shift with the seasons.</p>
+          <p>
+            <a class="ref" href="https://en.wikipedia.org/wiki/Sunrise_equation" target="_blank">Wikipedia: Sunrise equation</a> ·
+            <a class="ref" href="https://en.wikipedia.org/wiki/Midnight_sun" target="_blank">Midnight sun</a> ·
+            <a class="ref" href="https://en.wikipedia.org/wiki/Polar_night" target="_blank">Polar night</a> ·
+            <a class="ref" href="https://gml.noaa.gov/grad/solcalc/" target="_blank">NOAA Solar Calculator</a>
+          </p>
+        </div>
+
+        <hr class="about-divider" />
+
+        <!-- Fasting duration -->
+        <div class="about-section">
+          <h3>🌙 Fasting Duration <span class="badge badge-fast">Fasting mode</span></h3>
+          <p>In Islamic practice, the daily fast during <strong>Ramadan</strong> (and voluntary fasts) runs from <strong>Fajr</strong> (pre-dawn twilight) to <strong>Maghrib</strong> (sunset). Fasting duration is therefore always <em>longer</em> than daylight — the extra time is the pre-dawn twilight window.</p>
+          <p><strong>Fajr</strong> is defined as when the sun reaches a specific angle <em>below</em> the horizon before sunrise. That angle is what differs between calculation methods (see below).</p>
+          <p>
+            <a class="ref" href="https://en.wikipedia.org/wiki/Fajr_prayer" target="_blank">Wikipedia: Fajr prayer</a> ·
+            <a class="ref" href="https://en.wikipedia.org/wiki/Salah_times" target="_blank">Islamic prayer times</a> ·
+            <a class="ref" href="https://en.wikipedia.org/wiki/Ramadan" target="_blank">Ramadan</a>
+          </p>
+        </div>
+
+        <hr class="about-divider" />
+
+        <!-- Fasting methods -->
+        <div class="about-section">
+          <h3>📐 Fasting Calculation Methods</h3>
+          <p>Different Islamic scholarly bodies set different solar depression angles for Fajr. A larger angle means the sun must be deeper below the horizon — so Fajr is <em>earlier</em> and the fast is <em>longer</em>.</p>
+          <table class="about-table">
+            <thead>
+              <tr>
+                <th>Method</th>
+                <th>Fajr angle</th>
+                <th>Region / Authority</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Muslim World League</td>
+                <td><span class="angle">18°</span></td>
+                <td>International default. <a class="ref" href="https://www.muslimworldleague.org/" target="_blank">muslimworldleague.org</a></td>
+              </tr>
+              <tr>
+                <td>ISNA</td>
+                <td><span class="angle">15°</span></td>
+                <td>North America. <a class="ref" href="https://www.isna.net/" target="_blank">isna.net</a> · <a class="ref" href="https://en.wikipedia.org/wiki/Islamic_Society_of_North_America" target="_blank">Wikipedia</a></td>
+              </tr>
+              <tr>
+                <td>Egyptian EGAS</td>
+                <td><span class="angle">19.5°</span></td>
+                <td>Egypt &amp; parts of Africa. Egyptian General Authority of Survey.</td>
+              </tr>
+              <tr>
+                <td>Umm al-Qura</td>
+                <td><span class="angle">18.5°</span></td>
+                <td>Saudi Arabia (official). <a class="ref" href="https://www.ummulqura.org.sa/" target="_blank">ummulqura.org.sa</a> · <a class="ref" href="https://en.wikipedia.org/wiki/Umm_al-Qura_calendar" target="_blank">Wikipedia</a></td>
+              </tr>
+              <tr>
+                <td>Karachi (UISK)</td>
+                <td><span class="angle">18°</span></td>
+                <td>South &amp; Central Asia. University of Islamic Sciences, Karachi.</td>
+              </tr>
+              <tr>
+                <td>Tehran (IGUT)</td>
+                <td><span class="angle">17.7°</span></td>
+                <td>Iran. Institute of Geophysics, University of Tehran. <a class="ref" href="https://en.wikipedia.org/wiki/Islamic_prayer_times" target="_blank">Wikipedia</a></td>
+              </tr>
+              <tr>
+                <td>Custom</td>
+                <td><span class="angle">10°–25°</span></td>
+                <td>Set your own Fajr angle with the slider.</td>
+              </tr>
+            </tbody>
+          </table>
+          <p style="margin-top:0.6rem">
+            <a class="ref" href="https://en.wikipedia.org/wiki/Islamic_prayer_times" target="_blank">Wikipedia: Islamic prayer times</a> ·
+            <a class="ref" href="https://aladhan.com/prayer-times-api" target="_blank">Aladhan Prayer Times API</a>
+          </p>
+        </div>
+
+        <hr class="about-divider" />
+
+        <!-- High-latitude rules -->
+        <div class="about-section">
+          <h3>🧊 High-Latitude Rules</h3>
+          <p>At high latitudes (roughly above 48–65°N/S depending on date and method), the sun may never dip below the Fajr angle — <strong>twilight never fully ends</strong>. In these cases a standard Fajr cannot be calculated, and scholars have proposed different rules:</p>
+          <table class="about-table">
+            <thead>
+              <tr><th>Rule</th><th>How it works</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1/7 of Night</td>
+                <td>Fajr = 1/7 of the night duration before sunrise. Used by some European Muslim councils. Relatively lenient.</td>
+              </tr>
+              <tr>
+                <td>Middle of Night</td>
+                <td>Fajr = midpoint between sunset and sunrise (half the night). More conservative; produces a longer fast.</td>
+              </tr>
+              <tr>
+                <td>Nearest Day</td>
+                <td>Use the fasting duration from the nearest date (before or after) when a normal Fajr calculation was valid. Preserves local context.</td>
+              </tr>
+              <tr>
+                <td>Makkah Reference</td>
+                <td>Apply Makkah's Fajr time (21.4°N) uniformly. Used when a fixed global reference is preferred.</td>
+              </tr>
+            </tbody>
+          </table>
+          <p style="margin-top:0.6rem">On the map, rows where a hi-lat rule was applied are <strong>tinted violet</strong>. City markers show amber text for hi-lat values.</p>
+          <p>
+            <a class="ref" href="https://en.wikipedia.org/wiki/Salah_times#High_latitude_rules" target="_blank">Wikipedia: High-latitude prayer rules</a> ·
+            <a class="ref" href="https://islamqa.info/en/answers/106322" target="_blank">IslamQA: Fasting at high latitudes</a>
+          </p>
+        </div>
+
+        <hr class="about-divider" />
+
+        <!-- Color scales -->
+        <div class="about-section">
+          <h3>🎨 Color Scales</h3>
+          <p><strong>Daylight mode</strong> — 0 to 24 hours:</p>
+          <ul>
+            <li><span class="color-chip" style="background:#080a2e"></span> <strong>0 h</strong> — Polar night (deep navy)</li>
+            <li><span class="color-chip" style="background:#2563eb"></span> <strong>6 h</strong> — Short winter day (blue)</li>
+            <li><span class="color-chip" style="background:#22c55e"></span> <strong>12 h</strong> — Equinox everywhere (green)</li>
+            <li><span class="color-chip" style="background:#eab308"></span> <strong>18 h</strong> — Long summer day (amber)</li>
+            <li><span class="color-chip" style="background:#fef9c3"></span> <strong>24 h</strong> — Midnight sun (pale yellow)</li>
+          </ul>
+          <p style="margin-top:0.5rem"><strong>Fasting mode</strong> — typically 12 to 22+ hours:</p>
+          <ul>
+            <li><span class="color-chip" style="background:#065f46"></span> <strong>10 h</strong> — Very short fast (equatorial, deep green)</li>
+            <li><span class="color-chip" style="background:#22c55e"></span> <strong>12 h</strong> — Short fast (green)</li>
+            <li><span class="color-chip" style="background:#eab308"></span> <strong>16 h</strong> — Long fast (amber)</li>
+            <li><span class="color-chip" style="background:#ef4444"></span> <strong>20 h</strong> — Very long fast (red)</li>
+            <li><span class="color-chip" style="background:#450a0a"></span> <strong>24 h</strong> — Extreme (crimson)</li>
+          </ul>
+        </div>
+
+        <hr class="about-divider" />
+
+        <!-- Controls -->
+        <div class="about-section">
+          <h3>🎛️ Controls Reference</h3>
+          <table class="about-table">
+            <tbody>
+              <tr><td>☀️ / 🌙 Mode</td><td>Switch between Daylight and Fasting duration overlays.</td></tr>
+              <tr><td>Equinox / Solstice</td><td>Jump instantly to the 4 key solar events of the year.</td></tr>
+              <tr><td>Date picker</td><td>Choose any date; the slider and overlay update instantly.</td></tr>
+              <tr><td>Day slider</td><td>Scrub through day 1–365 of the year.</td></tr>
+              <tr><td>← / →</td><td>Step one day backward or forward.</td></tr>
+              <tr><td>▶ / ⏸ Play</td><td>Animate through the full year in a loop.</td></tr>
+              <tr><td>Speed</td><td>Days advanced per second: Slow (10), Normal (30), Fast (60).</td></tr>
+              <tr><td>Opacity</td><td>Adjust overlay transparency to see more/less of the base map.</td></tr>
+              <tr><td>Method</td><td>(Fasting mode) Select the Fajr angle calculation authority.</td></tr>
+              <tr><td>Hi-lat rule</td><td>(Fasting mode) Rule applied when Fajr is uncalculable at high latitudes.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <hr class="about-divider" />
+
+        <!-- Further reading -->
+        <div class="about-section">
+          <h3>📚 Further Reading</h3>
+          <ul>
+            <li><a class="ref" href="https://en.wikipedia.org/wiki/Axial_tilt" target="_blank">Wikipedia: Axial tilt</a> — why seasons exist and why day length varies.</li>
+            <li><a class="ref" href="https://en.wikipedia.org/wiki/Solar_declination" target="_blank">Wikipedia: Solar declination</a> — the angle between the Sun and Earth's equatorial plane.</li>
+            <li><a class="ref" href="https://en.wikipedia.org/wiki/Arctic_Circle" target="_blank">Wikipedia: Arctic Circle</a> — the boundary of the midnight-sun / polar-night zone.</li>
+            <li><a class="ref" href="https://en.wikipedia.org/wiki/Equation_of_time" target="_blank">Wikipedia: Equation of time</a> — why solar noon ≠ clock noon.</li>
+            <li><a class="ref" href="https://gml.noaa.gov/grad/solcalc/solareqns.PDF" target="_blank">NOAA: Solar calculation equations (PDF)</a></li>
+            <li><a class="ref" href="https://openlayers.org/" target="_blank">OpenLayers</a> — the mapping library powering this map.</li>
+            <li><a class="ref" href="https://github.com/ismailsunni/map" target="_blank">Source code on GitHub</a></li>
+          </ul>
+        </div>
+
+      </div><!-- /about-body -->
+    </div><!-- /about-panel -->
+  </div><!-- /about-overlay -->
 
   <!-- Controls -->
   <div id="controls">
@@ -784,6 +1066,21 @@
     // ═══════════════════════════════════════════════════════════════════════
     // ── Controls wiring ─────────────────────────────────────────────────────
     // ═══════════════════════════════════════════════════════════════════════
+
+    // ── About modal ─────────────────────────────────────────────────────────
+    const aboutOverlay = document.getElementById('about-overlay');
+    document.getElementById('about-btn').addEventListener('click', () => {
+      aboutOverlay.classList.add('open');
+    });
+    document.getElementById('about-close').addEventListener('click', () => {
+      aboutOverlay.classList.remove('open');
+    });
+    aboutOverlay.addEventListener('click', e => {
+      if (e.target === aboutOverlay) aboutOverlay.classList.remove('open');
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') aboutOverlay.classList.remove('open');
+    });
 
     // Minimize / expand panel
     document.getElementById('ctrl-minimize-btn').addEventListener('click', () => {
