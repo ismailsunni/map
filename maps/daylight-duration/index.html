@@ -202,6 +202,50 @@
 
     /* divider */
     .ctrl-divider { width: 1px; height: 20px; background: #2a2d3a; flex-shrink: 0; }
+
+    /* ── City markers ── */
+    .city-marker {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      pointer-events: none;
+      user-select: none;
+      white-space: nowrap;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    .city-marker.side-left { flex-direction: row-reverse; }
+
+    .city-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(255,255,255,0.9);
+      flex-shrink: 0;
+      transition: background 0.35s;
+      box-shadow: 0 0 0 2px rgba(0,0,0,0.35), 0 0 6px rgba(0,0,0,0.5);
+    }
+    .city-bubble {
+      background: rgba(8,10,18,0.82);
+      backdrop-filter: blur(6px);
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 4px;
+      padding: 2px 5px;
+      display: flex;
+      flex-direction: column;
+      line-height: 1.35;
+    }
+    .city-name {
+      font-size: 0.59rem;
+      color: #9aa0bc;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+    }
+    .city-value {
+      font-size: 0.68rem;
+      color: #e8eaf0;
+      font-weight: 700;
+      letter-spacing: 0.1px;
+    }
+    .city-value.special { color: #f59e0b; } /* polar night / midnight sun */
   </style>
 </head>
 <body>
@@ -472,6 +516,42 @@
     }
 
     // ═══════════════════════════════════════════════════════════════════════
+    // ── Notable Cities ──────────────────────────────────────────────────────
+    // ═══════════════════════════════════════════════════════════════════════
+
+    const CITIES = [
+      // ── Extreme north ────────────────────────────────────────────────────
+      { name: 'Tromsø',        lat:  69.65,  lon:  18.96,  side: 'right', dy: -6  },
+      { name: 'Reykjavik',     lat:  64.13,  lon: -21.82,  side: 'right', dy:  0  },
+      // ── High north ───────────────────────────────────────────────────────
+      { name: 'Moscow',        lat:  55.75,  lon:  37.62,  side: 'right', dy:  0  },
+      { name: 'London',        lat:  51.51,  lon:  -0.13,  side: 'right', dy: -6  },
+      { name: 'Berlin',        lat:  52.52,  lon:  13.40,  side: 'left',  dy:  6  },
+      // ── Mid-north ────────────────────────────────────────────────────────
+      { name: 'Paris',         lat:  48.86,  lon:   2.35,  side: 'left',  dy:  0  },
+      { name: 'New York',      lat:  40.71,  lon: -74.01,  side: 'right', dy:  0  },
+      { name: 'Istanbul',      lat:  41.01,  lon:  28.96,  side: 'right', dy:  0  },
+      { name: 'Beijing',       lat:  39.91,  lon: 116.39,  side: 'right', dy:  0  },
+      { name: 'Tokyo',         lat:  35.69,  lon: 139.69,  side: 'right', dy: -7  },
+      // ── Islamic & Middle East ────────────────────────────────────────────
+      { name: 'Cairo',         lat:  30.06,  lon:  31.25,  side: 'right', dy:  0  },
+      { name: 'Riyadh',        lat:  24.69,  lon:  46.72,  side: 'right', dy: -6  },
+      { name: 'Mecca 🕋',      lat:  21.42,  lon:  39.83,  side: 'left',  dy:  6  },
+      // ── Tropical / SE Asia ───────────────────────────────────────────────
+      { name: 'Mumbai',        lat:  19.08,  lon:  72.88,  side: 'left',  dy:  0  },
+      { name: 'Kuala Lumpur',  lat:   3.14,  lon: 101.69,  side: 'right', dy: -6  },
+      { name: 'Singapore',     lat:   1.35,  lon: 103.82,  side: 'right', dy:  6  },
+      { name: 'Jakarta',       lat:  -6.21,  lon: 106.85,  side: 'right', dy: -6  },
+      { name: 'Yogyakarta',    lat:  -7.80,  lon: 110.37,  side: 'right', dy:  6  },
+      // ── Southern hemisphere ───────────────────────────────────────────────
+      { name: 'Sydney',        lat: -33.87,  lon: 151.21,  side: 'right', dy:  0  },
+      { name: 'Cape Town',     lat: -33.93,  lon:  18.42,  side: 'right', dy:  0  },
+      { name: 'Buenos Aires',  lat: -34.61,  lon: -58.38,  side: 'right', dy:  0  },
+      // ── Extreme south ────────────────────────────────────────────────────
+      { name: 'Ushuaia',       lat: -54.80,  lon: -68.30,  side: 'right', dy:  0  },
+    ];
+
+    // ═══════════════════════════════════════════════════════════════════════
     // ── State ───────────────────────────────────────────────────────────────
     // ═══════════════════════════════════════════════════════════════════════
 
@@ -644,6 +724,7 @@
 
       updateInfoBar();
       drawOverlay();
+      updateCityLabels();
     }
 
     function updateInfoBar() {
@@ -669,6 +750,7 @@
       updateInfoBar();
       drawLegend();
       drawOverlay();
+      updateCityLabels();
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -725,12 +807,14 @@
       document.getElementById('custom-angle-group').classList.toggle('hidden', !isCustom);
       updateInfoBar();
       drawOverlay();
+      updateCityLabels();
     });
 
     // Hi-lat rule
     document.getElementById('hilat-select').addEventListener('change', e => {
       currentHiLat = e.target.value;
       drawOverlay();
+      updateCityLabels();
     });
 
     // Custom angle
@@ -738,6 +822,7 @@
       customFajrAngle = parseFloat(e.target.value);
       document.getElementById('custom-angle-val').textContent = customFajrAngle.toFixed(1);
       drawOverlay();
+      updateCityLabels();
     });
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -817,9 +902,98 @@
     });
 
     // ═══════════════════════════════════════════════════════════════════════
+    // ── City Overlays ────────────────────────────────────────────────────────
+    // ═══════════════════════════════════════════════════════════════════════
+
+    const cityOverlays = []; // { overlay, el, city }
+
+    function formatHours(h) {
+      if (h == null || isNaN(h)) return '—';
+      if (h <= 0)  return '0h 00m';
+      if (h >= 24) return '24h 00m';
+      const hrs = Math.floor(h);
+      const min = Math.round((h - hrs) * 60);
+      // Handle rounding overflow
+      if (min === 60) return `${hrs + 1}h 00m`;
+      return `${hrs}h ${String(min).padStart(2, '0')}m`;
+    }
+
+    function specialLabel(lat, doy) {
+      // Returns 'midnight_sun' | 'polar_night' | null
+      const latRad = lat * Math.PI / 180;
+      const decl   = solarDeclination(doy);
+      const cos    = -Math.tan(latRad) * Math.tan(decl);
+      if (cos <= -1) return 'midnight_sun';
+      if (cos >=  1) return 'polar_night';
+      return null;
+    }
+
+    function createCityOverlays() {
+      CITIES.forEach(city => {
+        const el = document.createElement('div');
+        el.className = `city-marker side-${city.side || 'right'}`;
+        el.innerHTML =
+          `<div class="city-dot"></div>` +
+          `<div class="city-bubble">` +
+            `<div class="city-name">${city.name}</div>` +
+            `<div class="city-value">—</div>` +
+          `</div>`;
+
+        const overlay = new ol.Overlay({
+          element: el,
+          position: ol.proj.fromLonLat([city.lon, city.lat]),
+          positioning: city.side === 'left' ? 'center-right' : 'center-left',
+          offset: city.side === 'left' ? [-8, city.dy || 0] : [8, city.dy || 0],
+          stopEvent: false,
+        });
+        map.addOverlay(overlay);
+        cityOverlays.push({ overlay, el, city });
+      });
+    }
+
+    function updateCityLabels() {
+      const fajrAngle  = getFajrAngle();
+      const hiLatRule  = currentHiLat;
+      const isDaylight = currentMode === 'daylight';
+      const stops      = isDaylight ? DAYLIGHT_STOPS : FASTING_STOPS;
+
+      cityOverlays.forEach(({ el, city }) => {
+        const valEl = el.querySelector('.city-value');
+        const dotEl = el.querySelector('.city-dot');
+        let hours, isSpecial = false, specialClass = '';
+
+        if (isDaylight) {
+          hours = getDayLength(city.lat, currentDoy);
+          const sp = specialLabel(city.lat, currentDoy);
+          if (sp === 'midnight_sun') { isSpecial = true; specialClass = 'special'; }
+          if (sp === 'polar_night')  { isSpecial = true; specialClass = 'special'; }
+        } else {
+          const r = getFastingDuration(city.lat, currentDoy, fajrAngle, hiLatRule);
+          hours = r.hours;
+          if (r.hiLat) specialClass = 'special';
+        }
+
+        // Special labels for extreme cases
+        const sp = specialLabel(city.lat, currentDoy);
+        let label = formatHours(hours);
+        if (sp === 'midnight_sun') label = '☀️ 24h (midnight sun)';
+        else if (sp === 'polar_night') label = '🌑 0h (polar night)';
+
+        valEl.textContent = label;
+        valEl.className = `city-value ${specialClass}`;
+
+        // Color the dot to match the overlay
+        const h = Math.max(stops[0][0], Math.min(stops[stops.length-1][0], hours || 0));
+        const [r2, g2, b2] = colorFromStops(stops, h);
+        dotEl.style.background = `rgb(${r2},${g2},${b2})`;
+      });
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
     // ── Init ────────────────────────────────────────────────────────────────
     // ═══════════════════════════════════════════════════════════════════════
 
+    createCityOverlays();
     drawLegend();
     const today = new Date();
     updateDoy(dayOfYearFromDate(today), today.getFullYear());
