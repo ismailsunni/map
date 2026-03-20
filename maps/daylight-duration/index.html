@@ -3,307 +3,205 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Daylight Duration — Map Collection</title>
+  <title>Daylight & Fasting Duration — Map Collection</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@10.3.0/ol.css" />
   <script src="https://cdn.jsdelivr.net/npm/ol@10.3.0/dist/ol.js"></script>
   <link rel="stylesheet" href="../../assets/gallery.css" />
   <style>
     html, body { height: 100%; margin: 0; overflow: hidden; background: #0f1117; }
-
     #map-container { position: relative; width: 100%; height: 100vh; }
     #map { width: 100%; height: 100%; }
-
-    #overlay {
-      position: absolute;
-      top: 0; left: 0;
-      pointer-events: none;
-      z-index: 1;
-      mix-blend-mode: normal;
-    }
+    #overlay { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 1; }
 
     /* ── Info bar ── */
     #info-bar {
-      position: absolute;
-      top: 1rem;
-      left: 50%;
-      transform: translateX(-50%);
+      position: absolute; top: 1rem; left: 50%; transform: translateX(-50%);
       z-index: 10;
-      background: rgba(15,17,23,0.85);
-      backdrop-filter: blur(10px);
-      border: 1px solid #2a2d3a;
-      border-radius: 8px;
+      background: rgba(15,17,23,0.85); backdrop-filter: blur(10px);
+      border: 1px solid #2a2d3a; border-radius: 8px;
       padding: 0.4rem 1.25rem;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      font-size: 0.85rem;
-      color: #e8eaf0;
-      text-align: center;
-      white-space: nowrap;
+      font-size: 0.85rem; color: #e8eaf0; text-align: center; white-space: nowrap;
     }
     #info-bar .accent { color: #7fb3e8; font-weight: 600; }
+    #info-bar .method-tag {
+      display: inline-block;
+      background: #1e3050; border: 1px solid #3a5a90;
+      color: #93b4d9; font-size: 0.72rem; padding: 1px 7px;
+      border-radius: 4px; margin-left: 6px; vertical-align: middle;
+    }
 
     /* ── Legend ── */
     #legend {
-      position: absolute;
-      right: 1.25rem;
-      top: 50%;
-      transform: translateY(-50%);
+      position: absolute; right: 1.25rem; top: 50%; transform: translateY(-50%);
       z-index: 10;
-      background: rgba(15,17,23,0.85);
-      backdrop-filter: blur(10px);
-      border: 1px solid #2a2d3a;
-      border-radius: 10px;
+      background: rgba(15,17,23,0.85); backdrop-filter: blur(10px);
+      border: 1px solid #2a2d3a; border-radius: 10px;
       padding: 0.8rem 0.65rem;
-      display: flex;
-      gap: 0.45rem;
-      align-items: stretch;
+      display: flex; gap: 0.45rem; align-items: stretch;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      color: #8b8fa8;
-      font-size: 0.65rem;
+      color: #8b8fa8; font-size: 0.65rem;
     }
     #legend-title {
-      writing-mode: vertical-rl;
-      transform: rotate(180deg);
-      color: #8b8fa8;
-      font-size: 0.65rem;
-      text-align: center;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
+      writing-mode: vertical-rl; transform: rotate(180deg);
+      color: #8b8fa8; font-size: 0.65rem; text-align: center;
+      letter-spacing: 0.5px; text-transform: uppercase;
     }
-    .legend-inner {
-      display: flex;
-      gap: 0.35rem;
-      align-items: stretch;
+    .legend-inner { display: flex; gap: 0.35rem; align-items: stretch; }
+    #legend-bar { width: 14px; height: 200px; border-radius: 7px; border: 1px solid #2a2d3a; display: block; }
+    #legend-ticks {
+      display: flex; flex-direction: column; justify-content: space-between;
+      height: 200px; padding: 2px 0;
     }
-    #legend-bar {
-      width: 14px;
-      height: 180px;
-      border-radius: 7px;
-      border: 1px solid #2a2d3a;
-      display: block;
-    }
-    .legend-ticks {
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      height: 180px;
-      padding: 2px 0;
-    }
-    .legend-ticks span { display: block; line-height: 1; }
+    #legend-ticks span { display: block; line-height: 1; }
 
     /* ── Tooltip ── */
     #tooltip {
-      position: fixed;
-      z-index: 99;
-      background: rgba(15,17,23,0.92);
-      backdrop-filter: blur(8px);
-      border: 1px solid #2a2d3a;
-      color: #e8eaf0;
-      padding: 0.35rem 0.75rem;
-      border-radius: 7px;
+      position: fixed; z-index: 99;
+      background: rgba(15,17,23,0.92); backdrop-filter: blur(8px);
+      border: 1px solid #2a2d3a; color: #e8eaf0;
+      padding: 0.4rem 0.8rem; border-radius: 7px;
       font-size: 0.8rem;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      pointer-events: none;
-      display: none;
-      white-space: nowrap;
-      line-height: 1.5;
+      pointer-events: none; display: none; white-space: nowrap; line-height: 1.6;
     }
 
-    /* ── Controls panel ── */
+    /* ── Controls ── */
     #controls {
-      position: absolute;
-      bottom: 1.5rem;
-      left: 50%;
-      transform: translateX(-50%);
+      position: absolute; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
       z-index: 10;
-      background: rgba(15,17,23,0.88);
-      backdrop-filter: blur(14px);
-      border: 1px solid #2a2d3a;
-      border-radius: 14px;
+      background: rgba(15,17,23,0.88); backdrop-filter: blur(14px);
+      border: 1px solid #2a2d3a; border-radius: 14px;
       padding: 0.9rem 1.2rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.7rem;
-      width: 520px;
-      max-width: calc(100vw - 2rem);
+      display: flex; flex-direction: column; gap: 0.65rem;
+      width: 560px; max-width: calc(100vw - 2rem);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      color: #e8eaf0;
-      font-size: 0.85rem;
+      color: #e8eaf0; font-size: 0.85rem;
     }
+
+    /* Mode toggle */
+    .mode-toggle {
+      display: flex; gap: 0; border-radius: 8px; overflow: hidden;
+      border: 1px solid #2a2d3a; align-self: center;
+    }
+    .mode-btn {
+      background: #1a1d27; border: none; color: #8b8fa8;
+      padding: 0.32rem 1rem; font-size: 0.8rem; cursor: pointer;
+      font-family: inherit; transition: all 0.15s; white-space: nowrap;
+    }
+    .mode-btn + .mode-btn { border-left: 1px solid #2a2d3a; }
+    .mode-btn.active { background: #1e3050; color: #e8eaf0; }
+    .mode-btn:hover:not(.active) { background: #22283a; color: #cdd5e0; }
 
     /* Presets */
-    .presets {
-      display: flex;
-      gap: 0.4rem;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
+    .presets { display: flex; gap: 0.4rem; justify-content: center; flex-wrap: wrap; }
     .preset-btn {
-      background: #1a1d27;
-      border: 1px solid #2a2d3a;
-      color: #8b8fa8;
-      padding: 0.22rem 0.65rem;
-      border-radius: 6px;
-      font-size: 0.73rem;
-      cursor: pointer;
-      transition: all 0.15s;
-      font-family: inherit;
+      background: #1a1d27; border: 1px solid #2a2d3a; color: #8b8fa8;
+      padding: 0.22rem 0.65rem; border-radius: 6px; font-size: 0.73rem;
+      cursor: pointer; transition: all 0.15s; font-family: inherit;
     }
     .preset-btn:hover { background: #22283a; border-color: #4a6a99; color: #cdd5e0; }
     .preset-btn.active { background: #1e3050; border-color: #6c8ebf; color: #e8eaf0; }
 
     /* Date row */
-    .date-row {
-      display: flex;
-      align-items: center;
-      gap: 0.65rem;
-    }
+    .date-row { display: flex; align-items: center; gap: 0.65rem; }
     #date-input {
-      background: #1a1d27;
-      border: 1px solid #2a2d3a;
-      color: #e8eaf0;
-      padding: 0.28rem 0.55rem;
-      border-radius: 7px;
-      font-size: 0.82rem;
-      outline: none;
-      font-family: inherit;
-      cursor: pointer;
-      flex-shrink: 0;
+      background: #1a1d27; border: 1px solid #2a2d3a; color: #e8eaf0;
+      padding: 0.28rem 0.55rem; border-radius: 7px; font-size: 0.82rem;
+      outline: none; font-family: inherit; cursor: pointer; flex-shrink: 0;
     }
     #date-input:focus { border-color: #6c8ebf; }
-
-    /* Slider */
     #day-slider {
-      flex: 1;
-      -webkit-appearance: none;
-      height: 5px;
-      border-radius: 3px;
-      outline: none;
-      cursor: pointer;
-      background: linear-gradient(
-        to right,
-        #1e3a8a 0%,      /* Jan - winter */
-        #3b82f6 15%,     /* Feb */
-        #22c55e 25%,     /* Mar - spring equinox */
-        #eab308 42%,     /* Jun - summer solstice */
-        #22c55e 58%,     /* Sep - autumn equinox */
-        #3b82f6 75%,     /* Oct */
-        #1e3a8a 100%     /* Dec - winter */
-      );
+      flex: 1; -webkit-appearance: none; height: 5px; border-radius: 3px;
+      outline: none; cursor: pointer;
+      background: linear-gradient(to right,
+        #1e3a8a 0%, #3b82f6 15%, #22c55e 25%,
+        #eab308 42%, #22c55e 58%, #3b82f6 75%, #1e3a8a 100%);
     }
     #day-slider::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      background: #fff;
-      border: 2px solid #6c8ebf;
-      cursor: pointer;
-      box-shadow: 0 0 0 3px rgba(108,142,191,0.2);
-      transition: box-shadow 0.15s;
+      -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%;
+      background: #fff; border: 2px solid #6c8ebf; cursor: pointer;
+      box-shadow: 0 0 0 3px rgba(108,142,191,0.2); transition: box-shadow 0.15s;
     }
-    #day-slider::-webkit-slider-thumb:hover {
-      box-shadow: 0 0 0 5px rgba(108,142,191,0.3);
-    }
-    #day-label {
-      font-size: 0.72rem;
-      color: #8b8fa8;
-      min-width: 48px;
-      text-align: right;
-      flex-shrink: 0;
-    }
+    #day-slider::-webkit-slider-thumb:hover { box-shadow: 0 0 0 5px rgba(108,142,191,0.3); }
+    #day-label { font-size: 0.72rem; color: #8b8fa8; min-width: 48px; text-align: right; flex-shrink: 0; }
 
     /* Playback row */
-    .playback-row {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      justify-content: center;
-    }
+    .playback-row { display: flex; align-items: center; gap: 0.5rem; justify-content: center; }
     .play-btn {
-      background: #4a90d9;
-      border: none;
-      color: #fff;
-      width: 38px;
-      height: 38px;
-      border-radius: 50%;
-      font-size: 1rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background 0.15s, transform 0.1s;
-      flex-shrink: 0;
+      background: #4a90d9; border: none; color: #fff;
+      width: 38px; height: 38px; border-radius: 50%; font-size: 1rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s, transform 0.1s; flex-shrink: 0;
     }
     .play-btn:hover { background: #5fa5ef; transform: scale(1.05); }
     .play-btn:active { transform: scale(0.97); }
-
     .step-btn {
-      background: #1a1d27;
-      border: 1px solid #2a2d3a;
-      color: #8b8fa8;
-      width: 30px;
-      height: 30px;
-      border-radius: 8px;
-      font-size: 0.8rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.15s;
-      font-family: inherit;
+      background: #1a1d27; border: 1px solid #2a2d3a; color: #8b8fa8;
+      width: 30px; height: 30px; border-radius: 8px; font-size: 0.8rem;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s; font-family: inherit;
     }
     .step-btn:hover { background: #22283a; color: #e8eaf0; border-color: #4a6a99; }
-
     .speed-group {
-      display: flex;
-      align-items: center;
-      gap: 0.3rem;
-      margin-left: 0.75rem;
-      border-left: 1px solid #2a2d3a;
-      padding-left: 0.75rem;
+      display: flex; align-items: center; gap: 0.3rem;
+      margin-left: 0.75rem; border-left: 1px solid #2a2d3a; padding-left: 0.75rem;
     }
     .speed-label { font-size: 0.68rem; color: #8b8fa8; margin-right: 0.1rem; }
     .speed-btn {
-      background: #1a1d27;
-      border: 1px solid #2a2d3a;
-      color: #8b8fa8;
-      padding: 0.18rem 0.5rem;
-      border-radius: 5px;
-      font-size: 0.68rem;
-      cursor: pointer;
-      transition: all 0.15s;
-      font-family: inherit;
+      background: #1a1d27; border: 1px solid #2a2d3a; color: #8b8fa8;
+      padding: 0.18rem 0.5rem; border-radius: 5px; font-size: 0.68rem;
+      cursor: pointer; transition: all 0.15s; font-family: inherit;
     }
     .speed-btn:hover { background: #22283a; color: #cdd5e0; }
     .speed-btn.active { background: #1e3050; border-color: #6c8ebf; color: #e8eaf0; }
-
-    /* Opacity control */
     .opacity-group {
-      display: flex;
-      align-items: center;
-      gap: 0.45rem;
-      margin-left: 0.75rem;
-      border-left: 1px solid #2a2d3a;
-      padding-left: 0.75rem;
+      display: flex; align-items: center; gap: 0.45rem;
+      margin-left: 0.75rem; border-left: 1px solid #2a2d3a; padding-left: 0.75rem;
     }
     .opacity-label { font-size: 0.68rem; color: #8b8fa8; }
     #opacity-slider {
-      -webkit-appearance: none;
-      width: 60px;
-      height: 4px;
-      border-radius: 2px;
-      background: #2a2d3a;
-      outline: none;
-      cursor: pointer;
+      -webkit-appearance: none; width: 60px; height: 4px;
+      border-radius: 2px; background: #2a2d3a; outline: none; cursor: pointer;
     }
     #opacity-slider::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      background: #6c8ebf;
-      cursor: pointer;
+      -webkit-appearance: none; width: 12px; height: 12px;
+      border-radius: 50%; background: #6c8ebf; cursor: pointer;
     }
+
+    /* Fasting options row */
+    #fasting-opts {
+      display: flex; align-items: center; gap: 0.6rem;
+      flex-wrap: wrap;
+      padding-top: 0.55rem;
+      border-top: 1px solid #2a2d3a;
+    }
+    #fasting-opts.hidden { display: none; }
+    .fo-label { font-size: 0.72rem; color: #8b8fa8; flex-shrink: 0; }
+    .fo-select {
+      background: #1a1d27; border: 1px solid #2a2d3a; color: #e8eaf0;
+      padding: 0.25rem 0.5rem; border-radius: 6px; font-size: 0.78rem;
+      font-family: inherit; outline: none; cursor: pointer; flex: 1; min-width: 140px;
+    }
+    .fo-select:focus { border-color: #6c8ebf; }
+    #custom-angle-group {
+      display: flex; align-items: center; gap: 0.4rem;
+      border-left: 1px solid #2a2d3a; padding-left: 0.6rem;
+    }
+    #custom-angle-group.hidden { display: none; }
+    #custom-angle-label { font-size: 0.72rem; color: #8b8fa8; white-space: nowrap; }
+    #custom-angle-val { color: #7fb3e8; font-weight: 600; }
+    #custom-angle {
+      -webkit-appearance: none; width: 80px; height: 4px;
+      border-radius: 2px; background: #2a2d3a; outline: none; cursor: pointer;
+    }
+    #custom-angle::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 12px; height: 12px;
+      border-radius: 50%; background: #6c8ebf; cursor: pointer;
+    }
+
+    /* divider */
+    .ctrl-divider { width: 1px; height: 20px; background: #2a2d3a; flex-shrink: 0; }
   </style>
 </head>
 <body>
@@ -315,23 +213,17 @@
   </div>
 
   <div id="info-bar">
-    Daylight Duration &mdash; <span class="accent" id="info-date">loading…</span>
+    <span id="info-mode">Daylight Duration</span>
+    &mdash; <span class="accent" id="info-date">loading…</span>
+    <span class="method-tag" id="info-method" style="display:none"></span>
   </div>
 
   <!-- Legend -->
   <div id="legend">
-    <div id="legend-title">Daylight Hours</div>
+    <div id="legend-title">Hours</div>
     <div class="legend-inner">
-      <div class="legend-ticks">
-        <span>24h</span>
-        <span>20h</span>
-        <span>16h</span>
-        <span>12h</span>
-        <span>8h</span>
-        <span>4h</span>
-        <span>0h</span>
-      </div>
-      <canvas id="legend-bar" width="14" height="180"></canvas>
+      <div id="legend-ticks"></div>
+      <canvas id="legend-bar" width="14" height="200"></canvas>
     </div>
   </div>
 
@@ -340,7 +232,13 @@
 
   <!-- Controls -->
   <div id="controls">
-    <!-- Preset dates -->
+    <!-- Mode toggle -->
+    <div class="mode-toggle">
+      <button class="mode-btn active" data-mode="daylight">☀️ Daylight</button>
+      <button class="mode-btn" data-mode="fasting">🌙 Fasting</button>
+    </div>
+
+    <!-- Presets -->
     <div class="presets">
       <button class="preset-btn" data-doy="79">🌸 Vernal Equinox</button>
       <button class="preset-btn" data-doy="172">☀️ Summer Solstice</button>
@@ -348,7 +246,7 @@
       <button class="preset-btn" data-doy="355">❄️ Winter Solstice</button>
     </div>
 
-    <!-- Date picker + slider -->
+    <!-- Date + slider -->
     <div class="date-row">
       <input type="date" id="date-input" />
       <input type="range" id="day-slider" min="1" max="365" value="1" />
@@ -371,228 +269,434 @@
         <input type="range" id="opacity-slider" min="30" max="220" value="155" />
       </div>
     </div>
+
+    <!-- Fasting options (hidden until fasting mode) -->
+    <div id="fasting-opts" class="hidden">
+      <span class="fo-label">Method:</span>
+      <select id="method-select" class="fo-select">
+        <option value="18.0"  data-name="MWL">Muslim World League (18°)</option>
+        <option value="15.0"  data-name="ISNA">ISNA — North America (15°)</option>
+        <option value="19.5"  data-name="Egypt">Egyptian EGAS (19.5°)</option>
+        <option value="18.5"  data-name="UmmAlQura">Umm al-Qura / Makkah (18.5°)</option>
+        <option value="18.0"  data-name="Karachi">Karachi UISK (18°)</option>
+        <option value="17.7"  data-name="Tehran">Tehran IGUT (17.7°)</option>
+        <option value="custom" data-name="Custom">Custom…</option>
+      </select>
+
+      <span class="fo-label">Hi-lat:</span>
+      <select id="hilat-select" class="fo-select">
+        <option value="seventh">1/7 of Night</option>
+        <option value="midnight">Middle of Night</option>
+        <option value="nearest">Nearest Day</option>
+        <option value="makkah_ref">Makkah Reference</option>
+      </select>
+
+      <div id="custom-angle-group" class="hidden">
+        <span id="custom-angle-label">Fajr angle: <span id="custom-angle-val">18.0</span>°</span>
+        <input type="range" id="custom-angle" min="10" max="25" step="0.5" value="18" />
+      </div>
+    </div>
   </div>
 
   <script>
     // ═══════════════════════════════════════════════════════════════════════
-    // Solar Math
-    // Day length is purely a function of latitude + day of year.
-    // Formula: NOAA approximation (accurate to ~1min)
+    // ── Solar & Fasting Math ────────────────────────────────────────────────
     // ═══════════════════════════════════════════════════════════════════════
+
     function dayOfYearFromDate(date) {
       const start = new Date(date.getFullYear(), 0, 0);
       return Math.floor((date - start) / 86400000);
     }
 
+    // Solar declination for day-of-year (degrees → radians returned)
+    function solarDeclination(doy) {
+      return -23.45 * Math.cos((2 * Math.PI / 365) * (doy + 10)) * (Math.PI / 180);
+    }
+
+    // Day length: sunrise to sunset (hours, 0–24)
     function getDayLength(latDeg, doy) {
-      // Returns decimal hours of daylight (0–24)
       const latRad = latDeg * Math.PI / 180;
-      // Solar declination (Spencer, 1971 approx)
-      const decl = -23.45 * Math.cos((2 * Math.PI / 365) * (doy + 10)) * (Math.PI / 180);
-      const cosOmega = -Math.tan(latRad) * Math.tan(decl);
-      if (cosOmega <= -1) return 24; // midnight sun
-      if (cosOmega >=  1) return 0;  // polar night
-      return (2 * Math.acos(cosOmega) / Math.PI) * 12;
+      const decl   = solarDeclination(doy);
+      const cos    = -Math.tan(latRad) * Math.tan(decl);
+      if (cos <= -1) return 24; // midnight sun
+      if (cos >=  1) return 0;  // polar night
+      return (2 * Math.acos(cos) / Math.PI) * 12;
+    }
+
+    // ── Fasting duration: Fajr → Maghrib (sunset) ──────────────────────────
+    //
+    // Fajr = when sun altitude = -fajrAngle° before sunrise
+    // Maghrib = sunset (altitude = 0°)
+    //
+    // Hour angle at event:
+    //   cos(ω) = (sin(alt) - sin(lat)·sin(decl)) / (cos(lat)·cos(decl))
+    //
+    // Fasting duration = (|ω_fajr| + |ω_sunset|) × (12/π)  [hours]
+    //                  = daylight + pre-dawn twilight
+    // ──────────────────────────────────────────────────────────────────────
+
+    function _sunsetOmega(latRad, decl) {
+      const cos = -Math.tan(latRad) * Math.tan(decl);
+      if (cos <= -1) return { omega: Math.PI, tag: 'midnight_sun' };
+      if (cos >=  1) return { omega: 0,       tag: 'polar_night'  };
+      return { omega: Math.acos(cos), tag: null };
+    }
+
+    function _fajrOmega(latRad, decl, fajrAngle) {
+      const sinLat  = Math.sin(latRad), cosLat = Math.cos(latRad);
+      const sinDecl = Math.sin(decl),   cosDecl = Math.cos(decl);
+      const sinAlt  = Math.sin(-fajrAngle * Math.PI / 180);
+      // avoid division by zero near poles
+      if (Math.abs(cosLat * cosDecl) < 1e-9) return { omega: null, tag: 'hi_lat' };
+      const cos = (sinAlt - sinLat * sinDecl) / (cosLat * cosDecl);
+      if (cos <= -1) return { omega: null, tag: 'hi_lat'    }; // twilight never ends
+      if (cos >=  1) return { omega: null, tag: 'always_ok' }; // fajr = sunrise (angle too small)
+      return { omega: Math.acos(cos), tag: null };
+    }
+
+    // Raw fasting hours — returns { hours, daylight, tag }
+    // tag: null = normal | 'polar_night' | 'midnight_sun' | 'hi_lat'
+    function _rawFasting(latDeg, doy, fajrAngle) {
+      const latRad = latDeg * Math.PI / 180;
+      const decl   = solarDeclination(doy);
+      const { omega: omegaS, tag: tagS } = _sunsetOmega(latRad, decl);
+
+      if (tagS === 'polar_night')  return { hours: 0,  daylight: 0,  tag: 'polar_night'  };
+      if (tagS === 'midnight_sun') return { hours: null, daylight: 24, tag: 'midnight_sun' };
+
+      const daylight = 2 * omegaS * (12 / Math.PI);
+      const { omega: omegaF, tag: tagF } = _fajrOmega(latRad, decl, fajrAngle);
+
+      if (tagF === 'hi_lat')    return { hours: null, daylight, tag: 'hi_lat'    };
+      if (tagF === 'always_ok') return { hours: daylight, daylight, tag: null     }; // fajr ≈ sunrise
+
+      const hours = (omegaF + omegaS) * (12 / Math.PI);
+      return { hours, daylight, tag: null };
+    }
+
+    // Apply high-latitude rule and return final hours
+    function _applyHiLat(latDeg, doy, fajrAngle, rule, daylight) {
+      if (rule === 'seventh') {
+        // Fajr = 1/7 of night before sunrise → fasting = daylight + night/7
+        const night = 24 - daylight;
+        return daylight + night / 7;
+      }
+
+      if (rule === 'midnight') {
+        // Fajr = midpoint of night → fasting = daylight + night/2
+        const night = 24 - daylight;
+        return daylight + night / 2;
+      }
+
+      if (rule === 'makkah_ref') {
+        // Use Makkah (21.4225°N) fasting for this doy as reference
+        const r = _rawFasting(21.4225, doy, fajrAngle);
+        return r.hours ?? 13.5; // Makkah rarely hits hi-lat
+      }
+
+      if (rule === 'nearest') {
+        // Walk outward from doy until we find a day with valid Fajr
+        for (let offset = 1; offset <= 183; offset++) {
+          for (const sign of [-1, 1]) {
+            const d = ((doy + sign * offset - 1 + 365) % 365) + 1;
+            const r = _rawFasting(latDeg, d, fajrAngle);
+            if (r.tag === null) return r.hours;
+            if (r.tag === 'polar_night') return 0;
+          }
+        }
+        return daylight; // fallback
+      }
+
+      return daylight; // unknown rule
+    }
+
+    // Public: get fasting duration with hi-lat rule applied
+    // Returns { hours, daylight, hiLat: bool }
+    function getFastingDuration(latDeg, doy, fajrAngle, hiLatRule) {
+      const raw = _rawFasting(latDeg, doy, fajrAngle);
+      if (raw.tag === null)         return { hours: raw.hours, daylight: raw.daylight, hiLat: false };
+      if (raw.tag === 'polar_night') return { hours: 0,         daylight: 0,            hiLat: false };
+      // hi_lat or midnight_sun
+      const resolved = _applyHiLat(latDeg, doy, fajrAngle, hiLatRule, raw.daylight);
+      return { hours: resolved, daylight: raw.daylight, hiLat: true };
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // Color scale: 0h → deep navy … 12h → green … 24h → pale yellow
+    // ── Color scales ────────────────────────────────────────────────────────
     // ═══════════════════════════════════════════════════════════════════════
-    const COLOR_STOPS = [
-      [ 0,  [  8,  10,  46]],  // polar night – deep navy
-      [ 3,  [ 29,  58, 138]],  // very short day – dark blue
-      [ 6,  [ 37, 99,  235]],  // short day – blue
-      [ 9,  [ 56, 189, 248]],  // below equinox – sky blue
-      [12,  [ 34, 197,  94]],  // equinox – green
-      [15,  [163, 230,  53]],  // above equinox – lime
-      [18,  [234, 179,   8]],  // long day – amber
-      [21,  [249, 115,  22]],  // very long day – orange
-      [24,  [254, 249, 195]],  // midnight sun – pale yellow
+
+    // Daylight: 0h (polar night) → 12h (green) → 24h (pale yellow)
+    const DAYLIGHT_STOPS = [
+      [ 0,  [  8,  10,  46]],
+      [ 3,  [ 29,  58, 138]],
+      [ 6,  [ 37,  99, 235]],
+      [ 9,  [ 56, 189, 248]],
+      [12,  [ 34, 197,  94]],
+      [15,  [163, 230,  53]],
+      [18,  [234, 179,   8]],
+      [21,  [249, 115,  22]],
+      [24,  [254, 249, 195]],
     ];
 
-    function lerp(a, b, t) { return a + (b - a) * t; }
-    function lerpColor(c0, c1, t) {
+    // Fasting: 10h (short/green) → 16h (amber) → 24h (crimson)
+    const FASTING_STOPS = [
+      [10,  [  6, 95,  70]],   // deep teal-green — very short fast
+      [12,  [ 34, 197, 94]],   // green
+      [14,  [132, 204, 22]],   // lime
+      [16,  [234, 179,  8]],   // amber
+      [18,  [249, 115, 22]],   // orange
+      [20,  [239,  68, 68]],   // red
+      [22,  [185,  28, 28]],   // dark red
+      [24,  [ 69,  10, 10]],   // crimson
+    ];
+
+    // Hi-lat resolved marker color (applied rule gave a value, but flag it)
+    const HILAT_TINT = [80, 70, 120]; // muted violet — visually distinct
+
+    function _lerpColor(c0, c1, t) {
       return [
-        Math.round(lerp(c0[0], c1[0], t)),
-        Math.round(lerp(c0[1], c1[1], t)),
-        Math.round(lerp(c0[2], c1[2], t)),
+        Math.round(c0[0] + (c1[0] - c0[0]) * t),
+        Math.round(c0[1] + (c1[1] - c0[1]) * t),
+        Math.round(c0[2] + (c1[2] - c0[2]) * t),
       ];
     }
 
-    function hourToColor(hours) {
-      hours = Math.max(0, Math.min(24, hours));
-      for (let i = 0; i < COLOR_STOPS.length - 1; i++) {
-        const [h0, c0] = COLOR_STOPS[i];
-        const [h1, c1] = COLOR_STOPS[i + 1];
-        if (hours >= h0 && hours <= h1) {
-          return lerpColor(c0, c1, (hours - h0) / (h1 - h0));
-        }
+    function colorFromStops(stops, hours) {
+      hours = Math.max(stops[0][0], Math.min(stops[stops.length - 1][0], hours));
+      for (let i = 0; i < stops.length - 1; i++) {
+        const [h0, c0] = stops[i], [h1, c1] = stops[i + 1];
+        if (hours >= h0 && hours <= h1)
+          return _lerpColor(c0, c1, (hours - h0) / (h1 - h0));
       }
-      return COLOR_STOPS[COLOR_STOPS.length - 1][1];
+      return stops[stops.length - 1][1];
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // State
+    // ── State ───────────────────────────────────────────────────────────────
     // ═══════════════════════════════════════════════════════════════════════
-    let currentDoy    = 1;
-    let currentYear   = new Date().getFullYear();
-    let isPlaying     = false;
-    let playFps       = 30;
-    let overlayAlpha  = 155; // 0–255
-    let animFrame     = null;
-    let lastFrameTime = 0;
+
+    let currentDoy      = 1;
+    let currentYear     = new Date().getFullYear();
+    let currentMode     = 'daylight';       // 'daylight' | 'fasting'
+    let currentHiLat    = 'seventh';        // default hi-lat rule
+    let customFajrAngle = 18.0;
+    let overlayAlpha    = 155;
+    let isPlaying       = false;
+    let playFps         = 30;
+    let animFrame       = null;
+    let lastFrameTime   = 0;
+
+    function getFajrAngle() {
+      const sel = document.getElementById('method-select');
+      const val = sel.value;
+      return val === 'custom' ? customFajrAngle : parseFloat(val);
+    }
+
+    function getMethodName() {
+      const sel = document.getElementById('method-select');
+      const opt = sel.options[sel.selectedIndex];
+      return opt.dataset.name || '';
+    }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // OpenLayers map (muted OSM base)
+    // ── OpenLayers map ──────────────────────────────────────────────────────
     // ═══════════════════════════════════════════════════════════════════════
+
     const map = new ol.Map({
       target: 'map',
       layers: [
-        new ol.layer.Tile({
-          source: new ol.source.OSM(),
-          opacity: 0.45,
-        }),
+        new ol.layer.Tile({ source: new ol.source.OSM(), opacity: 0.45 }),
       ],
       view: new ol.View({
         center: ol.proj.fromLonLat([0, 20]),
         zoom: 2,
-        maxZoom: 12,
       }),
-      controls: ol.control.defaults.defaults({
-        attribution: true,
-        zoom: true,
-      }),
+      controls: ol.control.defaults.defaults({ attribution: true, zoom: true }),
     });
 
     // ═══════════════════════════════════════════════════════════════════════
-    // Canvas overlay — drawn per map row (lat → day length → color)
+    // ── Canvas overlay ──────────────────────────────────────────────────────
     // ═══════════════════════════════════════════════════════════════════════
+
     const overlayEl = document.getElementById('overlay');
     const ctx       = overlayEl.getContext('2d');
-
-    // Cache: row y → [r,g,b] for the current doy; reset on doy/zoom/pan change
-    let rowCache = null;
 
     function drawOverlay() {
       const size = map.getSize();
       if (!size) return;
       const [W, H] = size;
-
       if (overlayEl.width !== W || overlayEl.height !== H) {
-        overlayEl.width  = W;
-        overlayEl.height = H;
-        rowCache = null;
+        overlayEl.width = W; overlayEl.height = H;
       }
 
       const imgData = ctx.createImageData(W, H);
-      const px = imgData.data;
-      const alpha = overlayAlpha;
+      const px      = imgData.data;
+      const alpha   = overlayAlpha;
+      const isDaylight = (currentMode === 'daylight');
+      const fajrAngle  = getFajrAngle();
+      const hiLatRule  = currentHiLat;
 
       for (let y = 0; y < H; y++) {
-        // Convert screen pixel → map coord → lat
         const coord = map.getCoordinateFromPixel([W / 2, y]);
         if (!coord) continue;
         const lat = ol.proj.toLonLat(coord)[1];
-        const dl  = getDayLength(lat, currentDoy);
-        const [r, g, b] = hourToColor(dl);
 
-        // Fill entire row with same color (day length doesn't vary by longitude)
-        const rowStart = y * W * 4;
+        let color;
+        if (isDaylight) {
+          color = colorFromStops(DAYLIGHT_STOPS, getDayLength(lat, currentDoy));
+        } else {
+          const r = getFastingDuration(lat, currentDoy, fajrAngle, hiLatRule);
+          if (r.hours == null) {
+            color = [30, 30, 40]; // N/A fallback (shouldn't happen)
+          } else {
+            const baseColor = colorFromStops(FASTING_STOPS, r.hours);
+            // Tint hi-lat rows slightly to indicate rule was applied
+            color = r.hiLat
+              ? _lerpColor(baseColor, HILAT_TINT, 0.25)
+              : baseColor;
+          }
+        }
+
+        const [r, g, b] = color;
+        const rowStart  = y * W * 4;
         for (let x = 0; x < W; x++) {
           const i = rowStart + x * 4;
-          px[i]   = r;
-          px[i+1] = g;
-          px[i+2] = b;
-          px[i+3] = alpha;
+          px[i] = r; px[i+1] = g; px[i+2] = b; px[i+3] = alpha;
         }
       }
 
       ctx.putImageData(imgData, 0, 0);
     }
 
-    // Redraw whenever OL finishes rendering (handles pan/zoom too)
     map.on('postrender', drawOverlay);
 
     // ═══════════════════════════════════════════════════════════════════════
-    // Legend bar
+    // ── Legend ──────────────────────────────────────────────────────────────
     // ═══════════════════════════════════════════════════════════════════════
-    (function drawLegend() {
+
+    function drawLegend() {
+      const isDaylight = (currentMode === 'daylight');
+      const stops      = isDaylight ? DAYLIGHT_STOPS : FASTING_STOPS;
+      const minH       = stops[0][0];
+      const maxH       = stops[stops.length - 1][0];
+
+      // Draw gradient bar
       const canvas = document.getElementById('legend-bar');
       const lctx   = canvas.getContext('2d');
-      const H      = canvas.height;
-      const W      = canvas.width;
+      const H      = canvas.height, W = canvas.width;
       const img    = lctx.createImageData(W, H);
       const d      = img.data;
       for (let y = 0; y < H; y++) {
-        const hours = 24 * (1 - y / (H - 1));
-        const [r, g, b] = hourToColor(hours);
+        const hours = maxH - (maxH - minH) * (y / (H - 1));
+        const [r, g, b] = colorFromStops(stops, hours);
         for (let x = 0; x < W; x++) {
           const i = (y * W + x) * 4;
           d[i] = r; d[i+1] = g; d[i+2] = b; d[i+3] = 255;
         }
       }
       lctx.putImageData(img, 0, 0);
-    })();
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // Date helpers
-    // ═══════════════════════════════════════════════════════════════════════
-    function doyToDate(doy, year) {
-      return new Date(year, 0, doy);
+      // Update tick labels
+      const ticksEl = document.getElementById('legend-ticks');
+      const step    = isDaylight ? 4 : 2;
+      const ticks   = [];
+      for (let h = maxH; h >= minH; h -= step) ticks.push(h);
+      if (ticks[ticks.length - 1] !== minH) ticks.push(minH);
+      ticksEl.innerHTML = ticks.map(h => `<span>${h}h</span>`).join('');
+      ticksEl.style.height = `${H}px`;
+
+      // Legend title
+      document.getElementById('legend-title').textContent =
+        isDaylight ? 'Daylight Hours' : 'Fasting Hours';
     }
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // ── Date helpers ────────────────────────────────────────────────────────
+    // ═══════════════════════════════════════════════════════════════════════
+
+    function doyToDate(doy, year) { return new Date(year, 0, doy); }
+
     function toInputValue(date) {
-      const y = date.getFullYear();
-      const m = String(date.getMonth() + 1).padStart(2, '0');
-      const d = String(date.getDate()).padStart(2, '0');
-      return `${y}-${m}-${d}`;
+      return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
     }
 
     function formatDate(date) {
-      return date.toLocaleDateString('en-US', {
-        weekday: 'short', month: 'long', day: 'numeric',
-      });
+      return date.toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric' });
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // Update UI + redraw
+    // ── Update UI ───────────────────────────────────────────────────────────
     // ═══════════════════════════════════════════════════════════════════════
+
     function updateDoy(doy, year) {
       currentDoy  = Math.max(1, Math.min(365, doy));
       currentYear = year || currentYear;
-      rowCache    = null;
 
       const date = doyToDate(currentDoy, currentYear);
-
-      document.getElementById('day-slider').value    = currentDoy;
+      document.getElementById('day-slider').value     = currentDoy;
       document.getElementById('day-label').textContent = `Day ${currentDoy}`;
-      document.getElementById('date-input').value    = toInputValue(date);
+      document.getElementById('date-input').value     = toInputValue(date);
       document.getElementById('info-date').textContent = formatDate(date);
 
-      // Preset active state
       document.querySelectorAll('.preset-btn').forEach(btn => {
         btn.classList.toggle('active', +btn.dataset.doy === currentDoy);
       });
 
+      updateInfoBar();
+      drawOverlay();
+    }
+
+    function updateInfoBar() {
+      const isFasting = (currentMode === 'fasting');
+      document.getElementById('info-mode').textContent =
+        isFasting ? 'Fasting Duration' : 'Daylight Duration';
+      const tag = document.getElementById('info-method');
+      if (isFasting) {
+        tag.textContent = getMethodName();
+        tag.style.display = '';
+      } else {
+        tag.style.display = 'none';
+      }
+    }
+
+    function setMode(mode) {
+      currentMode = mode;
+      document.querySelectorAll('.mode-btn').forEach(b =>
+        b.classList.toggle('active', b.dataset.mode === mode)
+      );
+      const fasOpts = document.getElementById('fasting-opts');
+      fasOpts.classList.toggle('hidden', mode !== 'fasting');
+      updateInfoBar();
+      drawLegend();
       drawOverlay();
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // Controls wiring
+    // ── Controls wiring ─────────────────────────────────────────────────────
     // ═══════════════════════════════════════════════════════════════════════
+
+    // Mode toggle
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.addEventListener('click', () => setMode(btn.dataset.mode));
+    });
+
+    // Date input
     document.getElementById('date-input').addEventListener('change', e => {
       const d = new Date(e.target.value + 'T12:00:00');
       if (!isNaN(d)) updateDoy(dayOfYearFromDate(d), d.getFullYear());
     });
 
+    // Day slider
     document.getElementById('day-slider').addEventListener('input', e => {
       updateDoy(+e.target.value);
     });
 
+    // Preset buttons
     document.querySelectorAll('.preset-btn').forEach(btn => {
       btn.addEventListener('click', () => updateDoy(+btn.dataset.doy));
     });
 
+    // Step buttons
     document.getElementById('prev-btn').addEventListener('click', () => {
       stopPlay(); updateDoy(currentDoy - 1);
     });
@@ -600,6 +704,7 @@
       stopPlay(); updateDoy(currentDoy + 1);
     });
 
+    // Speed
     document.querySelectorAll('.speed-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         playFps = +btn.dataset.fps;
@@ -608,14 +713,37 @@
       });
     });
 
+    // Opacity
     document.getElementById('opacity-slider').addEventListener('input', e => {
       overlayAlpha = +e.target.value;
       drawOverlay();
     });
 
+    // Fasting method
+    document.getElementById('method-select').addEventListener('change', e => {
+      const isCustom = e.target.value === 'custom';
+      document.getElementById('custom-angle-group').classList.toggle('hidden', !isCustom);
+      updateInfoBar();
+      drawOverlay();
+    });
+
+    // Hi-lat rule
+    document.getElementById('hilat-select').addEventListener('change', e => {
+      currentHiLat = e.target.value;
+      drawOverlay();
+    });
+
+    // Custom angle
+    document.getElementById('custom-angle').addEventListener('input', e => {
+      customFajrAngle = parseFloat(e.target.value);
+      document.getElementById('custom-angle-val').textContent = customFajrAngle.toFixed(1);
+      drawOverlay();
+    });
+
     // ═══════════════════════════════════════════════════════════════════════
-    // Play / Pause animation
+    // ── Play / Pause ────────────────────────────────────────────────────────
     // ═══════════════════════════════════════════════════════════════════════
+
     function stopPlay() {
       isPlaying = false;
       document.getElementById('play-btn').innerHTML = '▶';
@@ -626,11 +754,9 @@
       isPlaying = true;
       document.getElementById('play-btn').innerHTML = '⏸';
       lastFrameTime = performance.now();
-
       function tick(now) {
         if (!isPlaying) return;
-        const interval = 1000 / playFps;
-        if (now - lastFrameTime >= interval) {
+        if (now - lastFrameTime >= 1000 / playFps) {
           lastFrameTime = now;
           updateDoy(currentDoy >= 365 ? 1 : currentDoy + 1);
         }
@@ -644,54 +770,57 @@
     });
 
     // ═══════════════════════════════════════════════════════════════════════
-    // Tooltip on hover
+    // ── Tooltip ─────────────────────────────────────────────────────────────
     // ═══════════════════════════════════════════════════════════════════════
+
     const tooltip = document.getElementById('tooltip');
 
     map.getViewport().addEventListener('mousemove', e => {
-      const pixel = map.getEventPixel(e);
-      const coord = map.getCoordinateFromPixel(pixel);
+      const coord = map.getCoordinateFromPixel(map.getEventPixel(e));
       if (!coord) { tooltip.style.display = 'none'; return; }
 
       const lonLat = ol.proj.toLonLat(coord);
-      const lat    = lonLat[1];
-      const lon    = lonLat[0];
-      const dl     = getDayLength(lat, currentDoy);
-      const h      = Math.floor(dl);
-      const m      = Math.round((dl - h) * 60);
+      const lat    = lonLat[1], lon = lonLat[0];
+      const latStr = `${Math.abs(lat).toFixed(1)}°${lat >= 0 ? 'N' : 'S'}`;
+      const lonStr = `${Math.abs(lon).toFixed(1)}°${lon >= 0 ? 'E' : 'W'}`;
 
-      const latStr = `${Math.abs(lat).toFixed(1)}° ${lat >= 0 ? 'N' : 'S'}`;
-      const lonStr = `${Math.abs(lon).toFixed(1)}° ${lon >= 0 ? 'E' : 'W'}`;
+      const dl   = getDayLength(lat, currentDoy);
+      const dlH  = Math.floor(dl), dlM = Math.round((dl - dlH) * 60);
 
-      tooltip.innerHTML =
-        `<strong>${latStr}, ${lonStr}</strong><br>` +
-        `☀️ ${h}h ${String(m).padStart(2,'0')}m of daylight`;
+      let html = `<strong>${latStr}, ${lonStr}</strong><br>`;
+      html += `☀️ Daylight: ${dlH}h ${String(dlM).padStart(2,'0')}m`;
 
+      if (currentMode === 'fasting') {
+        const r   = getFastingDuration(lat, currentDoy, getFajrAngle(), currentHiLat);
+        const fH  = Math.floor(r.hours), fM = Math.round((r.hours - fH) * 60);
+        const extra = r.hours - dl;
+        const eH  = Math.floor(extra), eM = Math.round((extra - eH) * 60);
+        html += `<br>🌙 Fasting: ${fH}h ${String(fM).padStart(2,'0')}m`;
+        html += ` <span style="color:#8b8fa8;font-size:0.75em">(+${eH}h${String(eM).padStart(2,'0')}m${r.hiLat ? ' · hi-lat' : ''})</span>`;
+      }
+
+      tooltip.innerHTML = html;
       tooltip.style.display = 'block';
-      tooltip.style.left    = (e.clientX + 16) + 'px';
-      tooltip.style.top     = (e.clientY - 12) + 'px';
     });
 
     map.getViewport().addEventListener('mouseleave', () => {
       tooltip.style.display = 'none';
     });
 
-    // Keep tooltip inside viewport
     document.addEventListener('mousemove', e => {
       if (tooltip.style.display === 'none') return;
-      const tw = tooltip.offsetWidth;
-      const th = tooltip.offsetHeight;
-      let x = e.clientX + 16;
-      let y = e.clientY - 12;
+      const tw = tooltip.offsetWidth, th = tooltip.offsetHeight;
+      let x = e.clientX + 16, y = e.clientY - 12;
       if (x + tw > window.innerWidth  - 10) x = e.clientX - tw - 16;
       if (y + th > window.innerHeight - 10) y = e.clientY - th - 12;
-      tooltip.style.left = x + 'px';
-      tooltip.style.top  = y + 'px';
+      tooltip.style.left = x + 'px'; tooltip.style.top = y + 'px';
     });
 
     // ═══════════════════════════════════════════════════════════════════════
-    // Init
+    // ── Init ────────────────────────────────────────────────────────────────
     // ═══════════════════════════════════════════════════════════════════════
+
+    drawLegend();
     const today = new Date();
     updateDoy(dayOfYearFromDate(today), today.getFullYear());
   </script>
