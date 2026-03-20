@@ -246,6 +246,29 @@
       letter-spacing: 0.1px;
     }
     .city-value.special { color: #f59e0b; } /* polar night / midnight sun */
+
+    /* ── Minimizable controls ── */
+    .ctrl-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding-bottom: 0.5rem; margin-bottom: 0.1rem;
+      border-bottom: 1px solid #2a2d3a;
+    }
+    .ctrl-title { font-size: 0.68rem; color: #8b8fa8; letter-spacing: 0.5px; text-transform: uppercase; }
+    .ctrl-minimize-btn {
+      background: none; border: 1px solid #2a2d3a; color: #8b8fa8;
+      width: 22px; height: 22px; border-radius: 5px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.8rem; line-height: 1; transition: all 0.15s; flex-shrink: 0;
+    }
+    .ctrl-minimize-btn:hover { background: #22283a; color: #e8eaf0; border-color: #4a6a99; }
+    #ctrl-body {
+      display: flex; flex-direction: column; gap: 0.65rem;
+      overflow: hidden; max-height: 500px; opacity: 1;
+      transition: max-height 0.28s ease, opacity 0.2s ease;
+    }
+    #controls.minimized #ctrl-body { max-height: 0; opacity: 0; pointer-events: none; }
+    #controls.minimized { padding-bottom: 0.5rem; }
+    #controls.minimized .ctrl-header { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
   </style>
 </head>
 <body>
@@ -276,70 +299,77 @@
 
   <!-- Controls -->
   <div id="controls">
-    <!-- Mode toggle -->
-    <div class="mode-toggle">
-      <button class="mode-btn active" data-mode="daylight">☀️ Daylight</button>
-      <button class="mode-btn" data-mode="fasting">🌙 Fasting</button>
+    <div class="ctrl-header">
+      <span class="ctrl-title">☀️ Controls</span>
+      <button class="ctrl-minimize-btn" id="ctrl-minimize-btn" title="Minimize panel">⌄</button>
     </div>
 
-    <!-- Presets -->
-    <div class="presets">
-      <button class="preset-btn" data-doy="79">🌸 Vernal Equinox</button>
-      <button class="preset-btn" data-doy="172">☀️ Summer Solstice</button>
-      <button class="preset-btn" data-doy="265">🍂 Autumnal Equinox</button>
-      <button class="preset-btn" data-doy="355">❄️ Winter Solstice</button>
-    </div>
-
-    <!-- Date + slider -->
-    <div class="date-row">
-      <input type="date" id="date-input" />
-      <input type="range" id="day-slider" min="1" max="365" value="1" />
-      <div id="day-label">Day 1</div>
-    </div>
-
-    <!-- Playback -->
-    <div class="playback-row">
-      <button class="step-btn" id="prev-btn" title="Previous day">←</button>
-      <button class="play-btn" id="play-btn" title="Play / Pause">▶</button>
-      <button class="step-btn" id="next-btn" title="Next day">→</button>
-      <div class="speed-group">
-        <span class="speed-label">Speed:</span>
-        <button class="speed-btn" data-fps="10">Slow</button>
-        <button class="speed-btn active" data-fps="30">Normal</button>
-        <button class="speed-btn" data-fps="60">Fast</button>
+    <div id="ctrl-body">
+      <!-- Mode toggle -->
+      <div class="mode-toggle">
+        <button class="mode-btn active" data-mode="daylight">☀️ Daylight</button>
+        <button class="mode-btn" data-mode="fasting">🌙 Fasting</button>
       </div>
-      <div class="opacity-group">
-        <span class="opacity-label">Opacity:</span>
-        <input type="range" id="opacity-slider" min="30" max="220" value="155" />
+
+      <!-- Presets -->
+      <div class="presets">
+        <button class="preset-btn" data-doy="79">🌸 Vernal Equinox</button>
+        <button class="preset-btn" data-doy="172">☀️ Summer Solstice</button>
+        <button class="preset-btn" data-doy="265">🍂 Autumnal Equinox</button>
+        <button class="preset-btn" data-doy="355">❄️ Winter Solstice</button>
       </div>
-    </div>
 
-    <!-- Fasting options (hidden until fasting mode) -->
-    <div id="fasting-opts" class="hidden">
-      <span class="fo-label">Method:</span>
-      <select id="method-select" class="fo-select">
-        <option value="18.0"  data-name="MWL">Muslim World League (18°)</option>
-        <option value="15.0"  data-name="ISNA">ISNA — North America (15°)</option>
-        <option value="19.5"  data-name="Egypt">Egyptian EGAS (19.5°)</option>
-        <option value="18.5"  data-name="UmmAlQura">Umm al-Qura / Makkah (18.5°)</option>
-        <option value="18.0"  data-name="Karachi">Karachi UISK (18°)</option>
-        <option value="17.7"  data-name="Tehran">Tehran IGUT (17.7°)</option>
-        <option value="custom" data-name="Custom">Custom…</option>
-      </select>
-
-      <span class="fo-label">Hi-lat:</span>
-      <select id="hilat-select" class="fo-select">
-        <option value="seventh">1/7 of Night</option>
-        <option value="midnight">Middle of Night</option>
-        <option value="nearest">Nearest Day</option>
-        <option value="makkah_ref">Makkah Reference</option>
-      </select>
-
-      <div id="custom-angle-group" class="hidden">
-        <span id="custom-angle-label">Fajr angle: <span id="custom-angle-val">18.0</span>°</span>
-        <input type="range" id="custom-angle" min="10" max="25" step="0.5" value="18" />
+      <!-- Date + slider -->
+      <div class="date-row">
+        <input type="date" id="date-input" />
+        <input type="range" id="day-slider" min="1" max="365" value="1" />
+        <div id="day-label">Day 1</div>
       </div>
-    </div>
+
+      <!-- Playback -->
+      <div class="playback-row">
+        <button class="step-btn" id="prev-btn" title="Previous day">←</button>
+        <button class="play-btn" id="play-btn" title="Play / Pause">▶</button>
+        <button class="step-btn" id="next-btn" title="Next day">→</button>
+        <div class="speed-group">
+          <span class="speed-label">Speed:</span>
+          <button class="speed-btn" data-fps="10">Slow</button>
+          <button class="speed-btn active" data-fps="30">Normal</button>
+          <button class="speed-btn" data-fps="60">Fast</button>
+        </div>
+        <div class="opacity-group">
+          <span class="opacity-label">Opacity:</span>
+          <input type="range" id="opacity-slider" min="30" max="220" value="155" />
+        </div>
+      </div>
+
+      <!-- Fasting options (hidden until fasting mode) -->
+      <div id="fasting-opts" class="hidden">
+        <span class="fo-label">Method:</span>
+        <select id="method-select" class="fo-select">
+          <option value="18.0"  data-name="MWL">Muslim World League (18°)</option>
+          <option value="15.0"  data-name="ISNA">ISNA — North America (15°)</option>
+          <option value="19.5"  data-name="Egypt">Egyptian EGAS (19.5°)</option>
+          <option value="18.5"  data-name="UmmAlQura">Umm al-Qura / Makkah (18.5°)</option>
+          <option value="18.0"  data-name="Karachi">Karachi UISK (18°)</option>
+          <option value="17.7"  data-name="Tehran">Tehran IGUT (17.7°)</option>
+          <option value="custom" data-name="Custom">Custom…</option>
+        </select>
+
+        <span class="fo-label">Hi-lat:</span>
+        <select id="hilat-select" class="fo-select">
+          <option value="seventh">1/7 of Night</option>
+          <option value="midnight">Middle of Night</option>
+          <option value="nearest">Nearest Day</option>
+          <option value="makkah_ref">Makkah Reference</option>
+        </select>
+
+        <div id="custom-angle-group" class="hidden">
+          <span id="custom-angle-label">Fajr angle: <span id="custom-angle-val">18.0</span>°</span>
+          <input type="range" id="custom-angle" min="10" max="25" step="0.5" value="18" />
+        </div>
+      </div>
+    </div><!-- /ctrl-body -->
   </div>
 
   <script>
@@ -521,28 +551,26 @@
 
     const CITIES = [
       // ── Extreme north ────────────────────────────────────────────────────
-      { name: 'Tromsø',        lat:  69.65,  lon:  18.96,  side: 'right', dy: -6  },
+      { name: 'Tromsø',        lat:  69.65,  lon:  18.96,  side: 'right', dy:  0  },
       { name: 'Reykjavik',     lat:  64.13,  lon: -21.82,  side: 'right', dy:  0  },
       // ── High north ───────────────────────────────────────────────────────
       { name: 'Moscow',        lat:  55.75,  lon:  37.62,  side: 'right', dy:  0  },
-      { name: 'London',        lat:  51.51,  lon:  -0.13,  side: 'right', dy: -6  },
-      { name: 'Berlin',        lat:  52.52,  lon:  13.40,  side: 'left',  dy:  6  },
+      { name: 'London',        lat:  51.51,  lon:  -0.13,  side: 'left',  dy:  0  },
       // ── Mid-north ────────────────────────────────────────────────────────
-      { name: 'Paris',         lat:  48.86,  lon:   2.35,  side: 'left',  dy:  0  },
-      { name: 'New York',      lat:  40.71,  lon: -74.01,  side: 'right', dy:  0  },
+      { name: 'Paris',         lat:  48.86,  lon:   2.35,  side: 'right', dy:  0  },
+      { name: 'San Francisco', lat:  37.77,  lon:-122.42,  side: 'right', dy: -7  },
+      { name: 'New York',      lat:  40.71,  lon: -74.01,  side: 'right', dy:  7  },
       { name: 'Istanbul',      lat:  41.01,  lon:  28.96,  side: 'right', dy:  0  },
-      { name: 'Beijing',       lat:  39.91,  lon: 116.39,  side: 'right', dy:  0  },
-      { name: 'Tokyo',         lat:  35.69,  lon: 139.69,  side: 'right', dy: -7  },
-      // ── Islamic & Middle East ────────────────────────────────────────────
+      { name: 'Beijing',       lat:  39.91,  lon: 116.39,  side: 'right', dy: -7  },
+      { name: 'Tokyo',         lat:  35.69,  lon: 139.69,  side: 'right', dy:  7  },
+      // ── Middle East / Africa ─────────────────────────────────────────────
       { name: 'Cairo',         lat:  30.06,  lon:  31.25,  side: 'right', dy:  0  },
-      { name: 'Riyadh',        lat:  24.69,  lon:  46.72,  side: 'right', dy: -6  },
-      { name: 'Mecca 🕋',      lat:  21.42,  lon:  39.83,  side: 'left',  dy:  6  },
-      // ── Tropical / SE Asia ───────────────────────────────────────────────
-      { name: 'Mumbai',        lat:  19.08,  lon:  72.88,  side: 'left',  dy:  0  },
-      { name: 'Kuala Lumpur',  lat:   3.14,  lon: 101.69,  side: 'right', dy: -6  },
-      { name: 'Singapore',     lat:   1.35,  lon: 103.82,  side: 'right', dy:  6  },
-      { name: 'Jakarta',       lat:  -6.21,  lon: 106.85,  side: 'right', dy: -6  },
-      { name: 'Yogyakarta',    lat:  -7.80,  lon: 110.37,  side: 'right', dy:  6  },
+      { name: 'Mecca 🕋',      lat:  21.42,  lon:  39.83,  side: 'left',  dy:  0  },
+      { name: 'Mumbai',        lat:  19.08,  lon:  72.88,  side: 'right', dy:  0  },
+      { name: 'Nairobi',       lat:  -1.29,  lon:  36.82,  side: 'right', dy:  0  },
+      // ── SE Asia ──────────────────────────────────────────────────────────
+      { name: 'Singapore',     lat:   1.35,  lon: 103.82,  side: 'left',  dy:  0  },
+      { name: 'Yogyakarta',    lat:  -7.80,  lon: 110.37,  side: 'right', dy:  0  },
       // ── Southern hemisphere ───────────────────────────────────────────────
       { name: 'Sydney',        lat: -33.87,  lon: 151.21,  side: 'right', dy:  0  },
       { name: 'Cape Town',     lat: -33.93,  lon:  18.42,  side: 'right', dy:  0  },
@@ -756,6 +784,15 @@
     // ═══════════════════════════════════════════════════════════════════════
     // ── Controls wiring ─────────────────────────────────────────────────────
     // ═══════════════════════════════════════════════════════════════════════
+
+    // Minimize / expand panel
+    document.getElementById('ctrl-minimize-btn').addEventListener('click', () => {
+      const panel = document.getElementById('controls');
+      const btn   = document.getElementById('ctrl-minimize-btn');
+      const minimized = panel.classList.toggle('minimized');
+      btn.textContent = minimized ? '⌃' : '⌄';
+      btn.title = minimized ? 'Expand controls' : 'Minimize controls';
+    });
 
     // Mode toggle
     document.querySelectorAll('.mode-btn').forEach(btn => {
