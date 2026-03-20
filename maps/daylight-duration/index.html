@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daylight Duration — Map Collection</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@10.3.0/ol.css" />
+  <script src="https://cdn.jsdelivr.net/npm/ol@10.3.0/dist/ol.js"></script>
+  <link rel="stylesheet" href="../../assets/gallery.css" />
+  <style>
+    html, body { height: 100%; margin: 0; overflow: hidden; background: #0f1117; }
+
+    #map-container { position: relative; width: 100%; height: 100vh; }
+    #map { width: 100%; height: 100%; }
+
+    #overlay {
+      position: absolute;
+      top: 0; left: 0;
+      pointer-events: none;
+      z-index: 1;
+      mix-blend-mode: normal;
+    }
+
+    /* ── Info bar ── */
+    #info-bar {
+      position: absolute;
+      top: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      background: rgba(15,17,23,0.85);
+      backdrop-filter: blur(10px);
+      border: 1px solid #2a2d3a;
+      border-radius: 8px;
+      padding: 0.4rem 1.25rem;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 0.85rem;
+      color: #e8eaf0;
+      text-align: center;
+      white-space: nowrap;
+    }
+    #info-bar .accent { color: #7fb3e8; font-weight: 600; }
+
+    /* ── Legend ── */
+    #legend {
+      position: absolute;
+      right: 1.25rem;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 10;
+      background: rgba(15,17,23,0.85);
+      backdrop-filter: blur(10px);
+      border: 1px solid #2a2d3a;
+      border-radius: 10px;
+      padding: 0.8rem 0.65rem;
+      display: flex;
+      gap: 0.45rem;
+      align-items: stretch;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #8b8fa8;
+      font-size: 0.65rem;
+    }
+    #legend-title {
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      color: #8b8fa8;
+      font-size: 0.65rem;
+      text-align: center;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .legend-inner {
+      display: flex;
+      gap: 0.35rem;
+      align-items: stretch;
+    }
+    #legend-bar {
+      width: 14px;
+      height: 180px;
+      border-radius: 7px;
+      border: 1px solid #2a2d3a;
+      display: block;
+    }
+    .legend-ticks {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 180px;
+      padding: 2px 0;
+    }
+    .legend-ticks span { display: block; line-height: 1; }
+
+    /* ── Tooltip ── */
+    #tooltip {
+      position: fixed;
+      z-index: 99;
+      background: rgba(15,17,23,0.92);
+      backdrop-filter: blur(8px);
+      border: 1px solid #2a2d3a;
+      color: #e8eaf0;
+      padding: 0.35rem 0.75rem;
+      border-radius: 7px;
+      font-size: 0.8rem;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      pointer-events: none;
+      display: none;
+      white-space: nowrap;
+      line-height: 1.5;
+    }
+
+    /* ── Controls panel ── */
+    #controls {
+      position: absolute;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      background: rgba(15,17,23,0.88);
+      backdrop-filter: blur(14px);
+      border: 1px solid #2a2d3a;
+      border-radius: 14px;
+      padding: 0.9rem 1.2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.7rem;
+      width: 520px;
+      max-width: calc(100vw - 2rem);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #e8eaf0;
+      font-size: 0.85rem;
+    }
+
+    /* Presets */
+    .presets {
+      display: flex;
+      gap: 0.4rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .preset-btn {
+      background: #1a1d27;
+      border: 1px solid #2a2d3a;
+      color: #8b8fa8;
+      padding: 0.22rem 0.65rem;
+      border-radius: 6px;
+      font-size: 0.73rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+    .preset-btn:hover { background: #22283a; border-color: #4a6a99; color: #cdd5e0; }
+    .preset-btn.active { background: #1e3050; border-color: #6c8ebf; color: #e8eaf0; }
+
+    /* Date row */
+    .date-row {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+    }
+    #date-input {
+      background: #1a1d27;
+      border: 1px solid #2a2d3a;
+      color: #e8eaf0;
+      padding: 0.28rem 0.55rem;
+      border-radius: 7px;
+      font-size: 0.82rem;
+      outline: none;
+      font-family: inherit;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    #date-input:focus { border-color: #6c8ebf; }
+
+    /* Slider */
+    #day-slider {
+      flex: 1;
+      -webkit-appearance: none;
+      height: 5px;
+      border-radius: 3px;
+      outline: none;
+      cursor: pointer;
+      background: linear-gradient(
+        to right,
+        #1e3a8a 0%,      /* Jan - winter */
+        #3b82f6 15%,     /* Feb */
+        #22c55e 25%,     /* Mar - spring equinox */
+        #eab308 42%,     /* Jun - summer solstice */
+        #22c55e 58%,     /* Sep - autumn equinox */
+        #3b82f6 75%,     /* Oct */
+        #1e3a8a 100%     /* Dec - winter */
+      );
+    }
+    #day-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2px solid #6c8ebf;
+      cursor: pointer;
+      box-shadow: 0 0 0 3px rgba(108,142,191,0.2);
+      transition: box-shadow 0.15s;
+    }
+    #day-slider::-webkit-slider-thumb:hover {
+      box-shadow: 0 0 0 5px rgba(108,142,191,0.3);
+    }
+    #day-label {
+      font-size: 0.72rem;
+      color: #8b8fa8;
+      min-width: 48px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    /* Playback row */
+    .playback-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+    .play-btn {
+      background: #4a90d9;
+      border: none;
+      color: #fff;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, transform 0.1s;
+      flex-shrink: 0;
+    }
+    .play-btn:hover { background: #5fa5ef; transform: scale(1.05); }
+    .play-btn:active { transform: scale(0.97); }
+
+    .step-btn {
+      background: #1a1d27;
+      border: 1px solid #2a2d3a;
+      color: #8b8fa8;
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+    .step-btn:hover { background: #22283a; color: #e8eaf0; border-color: #4a6a99; }
+
+    .speed-group {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      margin-left: 0.75rem;
+      border-left: 1px solid #2a2d3a;
+      padding-left: 0.75rem;
+    }
+    .speed-label { font-size: 0.68rem; color: #8b8fa8; margin-right: 0.1rem; }
+    .speed-btn {
+      background: #1a1d27;
+      border: 1px solid #2a2d3a;
+      color: #8b8fa8;
+      padding: 0.18rem 0.5rem;
+      border-radius: 5px;
+      font-size: 0.68rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+    .speed-btn:hover { background: #22283a; color: #cdd5e0; }
+    .speed-btn.active { background: #1e3050; border-color: #6c8ebf; color: #e8eaf0; }
+
+    /* Opacity control */
+    .opacity-group {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      margin-left: 0.75rem;
+      border-left: 1px solid #2a2d3a;
+      padding-left: 0.75rem;
+    }
+    .opacity-label { font-size: 0.68rem; color: #8b8fa8; }
+    #opacity-slider {
+      -webkit-appearance: none;
+      width: 60px;
+      height: 4px;
+      border-radius: 2px;
+      background: #2a2d3a;
+      outline: none;
+      cursor: pointer;
+    }
+    #opacity-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #6c8ebf;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <a class="back-btn" href="../../index.html">← Gallery</a>
+
+  <div id="map-container">
+    <div id="map"></div>
+    <canvas id="overlay"></canvas>
+  </div>
+
+  <div id="info-bar">
+    Daylight Duration &mdash; <span class="accent" id="info-date">loading…</span>
+  </div>
+
+  <!-- Legend -->
+  <div id="legend">
+    <div id="legend-title">Daylight Hours</div>
+    <div class="legend-inner">
+      <div class="legend-ticks">
+        <span>24h</span>
+        <span>20h</span>
+        <span>16h</span>
+        <span>12h</span>
+        <span>8h</span>
+        <span>4h</span>
+        <span>0h</span>
+      </div>
+      <canvas id="legend-bar" width="14" height="180"></canvas>
+    </div>
+  </div>
+
+  <!-- Tooltip -->
+  <div id="tooltip"></div>
+
+  <!-- Controls -->
+  <div id="controls">
+    <!-- Preset dates -->
+    <div class="presets">
+      <button class="preset-btn" data-doy="79">🌸 Vernal Equinox</button>
+      <button class="preset-btn" data-doy="172">☀️ Summer Solstice</button>
+      <button class="preset-btn" data-doy="265">🍂 Autumnal Equinox</button>
+      <button class="preset-btn" data-doy="355">❄️ Winter Solstice</button>
+    </div>
+
+    <!-- Date picker + slider -->
+    <div class="date-row">
+      <input type="date" id="date-input" />
+      <input type="range" id="day-slider" min="1" max="365" value="1" />
+      <div id="day-label">Day 1</div>
+    </div>
+
+    <!-- Playback -->
+    <div class="playback-row">
+      <button class="step-btn" id="prev-btn" title="Previous day">←</button>
+      <button class="play-btn" id="play-btn" title="Play / Pause">▶</button>
+      <button class="step-btn" id="next-btn" title="Next day">→</button>
+      <div class="speed-group">
+        <span class="speed-label">Speed:</span>
+        <button class="speed-btn" data-fps="10">Slow</button>
+        <button class="speed-btn active" data-fps="30">Normal</button>
+        <button class="speed-btn" data-fps="60">Fast</button>
+      </div>
+      <div class="opacity-group">
+        <span class="opacity-label">Opacity:</span>
+        <input type="range" id="opacity-slider" min="30" max="220" value="155" />
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ═══════════════════════════════════════════════════════════════════════
+    // Solar Math
+    // Day length is purely a function of latitude + day of year.
+    // Formula: NOAA approximation (accurate to ~1min)
+    // ═══════════════════════════════════════════════════════════════════════
+    function dayOfYearFromDate(date) {
+      const start = new Date(date.getFullYear(), 0, 0);
+      return Math.floor((date - start) / 86400000);
+    }
+
+    function getDayLength(latDeg, doy) {
+      // Returns decimal hours of daylight (0–24)
+      const latRad = latDeg * Math.PI / 180;
+      // Solar declination (Spencer, 1971 approx)
+      const decl = -23.45 * Math.cos((2 * Math.PI / 365) * (doy + 10)) * (Math.PI / 180);
+      const cosOmega = -Math.tan(latRad) * Math.tan(decl);
+      if (cosOmega <= -1) return 24; // midnight sun
+      if (cosOmega >=  1) return 0;  // polar night
+      return (2 * Math.acos(cosOmega) / Math.PI) * 12;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // Color scale: 0h → deep navy … 12h → green … 24h → pale yellow
+    // ═══════════════════════════════════════════════════════════════════════
+    const COLOR_STOPS = [
+      [ 0,  [  8,  10,  46]],  // polar night – deep navy
+      [ 3,  [ 29,  58, 138]],  // very short day – dark blue
+      [ 6,  [ 37, 99,  235]],  // short day – blue
+      [ 9,  [ 56, 189, 248]],  // below equinox – sky blue
+      [12,  [ 34, 197,  94]],  // equinox – green
+      [15,  [163, 230,  53]],  // above equinox – lime
+      [18,  [234, 179,   8]],  // long day – amber
+      [21,  [249, 115,  22]],  // very long day – orange
+      [24,  [254, 249, 195]],  // midnight sun – pale yellow
+    ];
+
+    function lerp(a, b, t) { return a + (b - a) * t; }
+    function lerpColor(c0, c1, t) {
+      return [
+        Math.round(lerp(c0[0], c1[0], t)),
+        Math.round(lerp(c0[1], c1[1], t)),
+        Math.round(lerp(c0[2], c1[2], t)),
+      ];
+    }
+
+    function hourToColor(hours) {
+      hours = Math.max(0, Math.min(24, hours));
+      for (let i = 0; i < COLOR_STOPS.length - 1; i++) {
+        const [h0, c0] = COLOR_STOPS[i];
+        const [h1, c1] = COLOR_STOPS[i + 1];
+        if (hours >= h0 && hours <= h1) {
+          return lerpColor(c0, c1, (hours - h0) / (h1 - h0));
+        }
+      }
+      return COLOR_STOPS[COLOR_STOPS.length - 1][1];
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // State
+    // ═══════════════════════════════════════════════════════════════════════
+    let currentDoy    = 1;
+    let currentYear   = new Date().getFullYear();
+    let isPlaying     = false;
+    let playFps       = 30;
+    let overlayAlpha  = 155; // 0–255
+    let animFrame     = null;
+    let lastFrameTime = 0;
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // OpenLayers map (muted OSM base)
+    // ═══════════════════════════════════════════════════════════════════════
+    const map = new ol.Map({
+      target: 'map',
+      layers: [
+        new ol.layer.Tile({
+          source: new ol.source.OSM(),
+          opacity: 0.45,
+        }),
+      ],
+      view: new ol.View({
+        center: ol.proj.fromLonLat([0, 20]),
+        zoom: 2,
+        maxZoom: 12,
+      }),
+      controls: ol.control.defaults.defaults({
+        attribution: true,
+        zoom: true,
+      }),
+    });
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // Canvas overlay — drawn per map row (lat → day length → color)
+    // ═══════════════════════════════════════════════════════════════════════
+    const overlayEl = document.getElementById('overlay');
+    const ctx       = overlayEl.getContext('2d');
+
+    // Cache: row y → [r,g,b] for the current doy; reset on doy/zoom/pan change
+    let rowCache = null;
+
+    function drawOverlay() {
+      const size = map.getSize();
+      if (!size) return;
+      const [W, H] = size;
+
+      if (overlayEl.width !== W || overlayEl.height !== H) {
+        overlayEl.width  = W;
+        overlayEl.height = H;
+        rowCache = null;
+      }
+
+      const imgData = ctx.createImageData(W, H);
+      const px = imgData.data;
+      const alpha = overlayAlpha;
+
+      for (let y = 0; y < H; y++) {
+        // Convert screen pixel → map coord → lat
+        const coord = map.getCoordinateFromPixel([W / 2, y]);
+        if (!coord) continue;
+        const lat = ol.proj.toLonLat(coord)[1];
+        const dl  = getDayLength(lat, currentDoy);
+        const [r, g, b] = hourToColor(dl);
+
+        // Fill entire row with same color (day length doesn't vary by longitude)
+        const rowStart = y * W * 4;
+        for (let x = 0; x < W; x++) {
+          const i = rowStart + x * 4;
+          px[i]   = r;
+          px[i+1] = g;
+          px[i+2] = b;
+          px[i+3] = alpha;
+        }
+      }
+
+      ctx.putImageData(imgData, 0, 0);
+    }
+
+    // Redraw whenever OL finishes rendering (handles pan/zoom too)
+    map.on('postrender', drawOverlay);
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // Legend bar
+    // ═══════════════════════════════════════════════════════════════════════
+    (function drawLegend() {
+      const canvas = document.getElementById('legend-bar');
+      const lctx   = canvas.getContext('2d');
+      const H      = canvas.height;
+      const W      = canvas.width;
+      const img    = lctx.createImageData(W, H);
+      const d      = img.data;
+      for (let y = 0; y < H; y++) {
+        const hours = 24 * (1 - y / (H - 1));
+        const [r, g, b] = hourToColor(hours);
+        for (let x = 0; x < W; x++) {
+          const i = (y * W + x) * 4;
+          d[i] = r; d[i+1] = g; d[i+2] = b; d[i+3] = 255;
+        }
+      }
+      lctx.putImageData(img, 0, 0);
+    })();
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // Date helpers
+    // ═══════════════════════════════════════════════════════════════════════
+    function doyToDate(doy, year) {
+      return new Date(year, 0, doy);
+    }
+
+    function toInputValue(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function formatDate(date) {
+      return date.toLocaleDateString('en-US', {
+        weekday: 'short', month: 'long', day: 'numeric',
+      });
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // Update UI + redraw
+    // ═══════════════════════════════════════════════════════════════════════
+    function updateDoy(doy, year) {
+      currentDoy  = Math.max(1, Math.min(365, doy));
+      currentYear = year || currentYear;
+      rowCache    = null;
+
+      const date = doyToDate(currentDoy, currentYear);
+
+      document.getElementById('day-slider').value    = currentDoy;
+      document.getElementById('day-label').textContent = `Day ${currentDoy}`;
+      document.getElementById('date-input').value    = toInputValue(date);
+      document.getElementById('info-date').textContent = formatDate(date);
+
+      // Preset active state
+      document.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.classList.toggle('active', +btn.dataset.doy === currentDoy);
+      });
+
+      drawOverlay();
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // Controls wiring
+    // ═══════════════════════════════════════════════════════════════════════
+    document.getElementById('date-input').addEventListener('change', e => {
+      const d = new Date(e.target.value + 'T12:00:00');
+      if (!isNaN(d)) updateDoy(dayOfYearFromDate(d), d.getFullYear());
+    });
+
+    document.getElementById('day-slider').addEventListener('input', e => {
+      updateDoy(+e.target.value);
+    });
+
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+      btn.addEventListener('click', () => updateDoy(+btn.dataset.doy));
+    });
+
+    document.getElementById('prev-btn').addEventListener('click', () => {
+      stopPlay(); updateDoy(currentDoy - 1);
+    });
+    document.getElementById('next-btn').addEventListener('click', () => {
+      stopPlay(); updateDoy(currentDoy + 1);
+    });
+
+    document.querySelectorAll('.speed-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        playFps = +btn.dataset.fps;
+        document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
+
+    document.getElementById('opacity-slider').addEventListener('input', e => {
+      overlayAlpha = +e.target.value;
+      drawOverlay();
+    });
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // Play / Pause animation
+    // ═══════════════════════════════════════════════════════════════════════
+    function stopPlay() {
+      isPlaying = false;
+      document.getElementById('play-btn').innerHTML = '▶';
+      if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
+    }
+
+    function startPlay() {
+      isPlaying = true;
+      document.getElementById('play-btn').innerHTML = '⏸';
+      lastFrameTime = performance.now();
+
+      function tick(now) {
+        if (!isPlaying) return;
+        const interval = 1000 / playFps;
+        if (now - lastFrameTime >= interval) {
+          lastFrameTime = now;
+          updateDoy(currentDoy >= 365 ? 1 : currentDoy + 1);
+        }
+        animFrame = requestAnimationFrame(tick);
+      }
+      animFrame = requestAnimationFrame(tick);
+    }
+
+    document.getElementById('play-btn').addEventListener('click', () => {
+      isPlaying ? stopPlay() : startPlay();
+    });
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // Tooltip on hover
+    // ═══════════════════════════════════════════════════════════════════════
+    const tooltip = document.getElementById('tooltip');
+
+    map.getViewport().addEventListener('mousemove', e => {
+      const pixel = map.getEventPixel(e);
+      const coord = map.getCoordinateFromPixel(pixel);
+      if (!coord) { tooltip.style.display = 'none'; return; }
+
+      const lonLat = ol.proj.toLonLat(coord);
+      const lat    = lonLat[1];
+      const lon    = lonLat[0];
+      const dl     = getDayLength(lat, currentDoy);
+      const h      = Math.floor(dl);
+      const m      = Math.round((dl - h) * 60);
+
+      const latStr = `${Math.abs(lat).toFixed(1)}° ${lat >= 0 ? 'N' : 'S'}`;
+      const lonStr = `${Math.abs(lon).toFixed(1)}° ${lon >= 0 ? 'E' : 'W'}`;
+
+      tooltip.innerHTML =
+        `<strong>${latStr}, ${lonStr}</strong><br>` +
+        `☀️ ${h}h ${String(m).padStart(2,'0')}m of daylight`;
+
+      tooltip.style.display = 'block';
+      tooltip.style.left    = (e.clientX + 16) + 'px';
+      tooltip.style.top     = (e.clientY - 12) + 'px';
+    });
+
+    map.getViewport().addEventListener('mouseleave', () => {
+      tooltip.style.display = 'none';
+    });
+
+    // Keep tooltip inside viewport
+    document.addEventListener('mousemove', e => {
+      if (tooltip.style.display === 'none') return;
+      const tw = tooltip.offsetWidth;
+      const th = tooltip.offsetHeight;
+      let x = e.clientX + 16;
+      let y = e.clientY - 12;
+      if (x + tw > window.innerWidth  - 10) x = e.clientX - tw - 16;
+      if (y + th > window.innerHeight - 10) y = e.clientY - th - 12;
+      tooltip.style.left = x + 'px';
+      tooltip.style.top  = y + 'px';
+    });
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // Init
+    // ═══════════════════════════════════════════════════════════════════════
+    const today = new Date();
+    updateDoy(dayOfYearFromDate(today), today.getFullYear());
+  </script>
+</body>
+</html>

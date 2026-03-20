@@ -1,5 +1,14 @@
 [
   {
+    "id": "daylight-duration",
+    "title": "Daylight Duration",
+    "description": "How many hours of daylight does each latitude get? Pick a date, play through the year, and watch the polar night and midnight sun shift.",
+    "library": "OpenLayers",
+    "libraryColor": "#4a90d9",
+    "thumbnail": "thumb.png",
+    "tags": ["solar", "animation", "raster", "latitude"]
+  },
+  {
     "id": "ol-world",
     "title": "World Overview",
     "description": "A simple world map using OpenStreetMap tiles, rendered with OpenLayers.",
