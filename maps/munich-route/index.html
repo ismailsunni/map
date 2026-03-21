@@ -656,6 +656,25 @@ map.on('click', (e) => {
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 loadLandmarks()
+
+// Style OL controls via JS (beats CSS specificity issues)
+map.once('rendercomplete', () => {
+  document.querySelectorAll('#map .ol-control button').forEach(btn => {
+    Object.assign(btn.style, {
+      background: 'rgba(15,17,23,0.9)', color: '#e8eaf0',
+      border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px',
+      width: '2rem', height: '2rem', fontSize: '1.1rem', fontWeight: '600',
+      cursor: 'pointer', transition: 'background 0.15s'
+    })
+    btn.onmouseenter = () => btn.style.background = 'rgba(74,144,217,0.5)'
+    btn.onmouseleave = () => btn.style.background = 'rgba(15,17,23,0.9)'
+  })
+  const zoom = document.querySelector('#map .ol-zoom')
+  if (zoom) Object.assign(zoom.style, { top: 'auto', bottom: '3rem', left: '0.75rem', right: 'auto' })
+  const attr = document.querySelector('#map .ol-attribution')
+  if (attr) Object.assign(attr.style, { background: 'rgba(15,17,23,0.7)', fontSize: '0.65rem', color: '#6b7280', borderRadius: '4px 0 0 0' })
+  document.querySelectorAll('#map .ol-attribution a').forEach(a => a.style.color = '#6b7280')
+})
 </script>
 </body>
 </html>
