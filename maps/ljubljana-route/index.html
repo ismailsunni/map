@@ -124,7 +124,43 @@
       #map { flex: 1; min-height: 52vw; }
     }
 
+    /* ── OL controls ── */
+    #map .ol-zoom { top: 0.5rem; left: 0.5rem; }
+    #map .ol-zoom .ol-zoom-in,
+    #map .ol-zoom .ol-zoom-out {
+      display: block;
+      width: 1.75em;
+      height: 1.75em;
+      line-height: 1.75em;
+      background-color: rgba(15,17,23,0.82);
+      color: #e8eaf0;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 4px;
+      font-size: 1.14em;
+      font-weight: bold;
+      margin: 1px;
+      cursor: pointer;
+    }
+    #map .ol-zoom .ol-zoom-in:hover,
+    #map .ol-zoom .ol-zoom-out:hover {
+      background-color: rgba(74,144,217,0.5);
+    }
+    #map .ol-attribution button { display: none; }
+    #map .ol-attribution ul { font-size: 0.65rem; color: #8b8fa8; }
+    #map .ol-attribution a { color: #8b8fa8; }
     #map .ol-rotate { display: none; }
+
+    /* ── Progress bar ── */
+    .progress-bar {
+      height: 3px;
+      background: #4a90d9;
+      border-radius: 2px;
+      width: 0%;
+      transition: width 0.4s ease;
+      margin-bottom: 0.4rem;
+      display: none;
+    }
+    .progress-bar.active { display: block; }
 
     /* ── Pick-on-map button ── */
     .pick-btn {
@@ -184,6 +220,7 @@
         <div class="stat"><span class="stat-label">Est. walk</span><span class="stat-value" id="rt-walk">—</span></div>
         <div class="stat"><span class="stat-label">Est. drive</span><span class="stat-value" id="rt-drive">—</span></div>
       </div>
+      <div class="progress-bar" id="rt-progress"></div>
       <div class="status-line" id="rt-status"></div>
     </div>
 
@@ -379,14 +416,17 @@ function updateEndpointStatus(which) {
   if (sel.value !== '') {
     statusEl.textContent = '✓ Landmark selected'
     statusEl.className = 'endpoint-status set'
-    pickBtn.style.display = 'none'
+    pickBtn.textContent = `📍 Change to map point`
+    pickBtn.style.display = 'block'
   } else if (point) {
     statusEl.textContent = '✓ Point snapped to road'
     statusEl.className = 'endpoint-status set'
-    pickBtn.style.display = 'none'
+    pickBtn.textContent = `📍 Reselect ${which === 'from' ? 'Start' : 'End'} on map`
+    pickBtn.style.display = 'block'
   } else {
     statusEl.textContent = 'Select a landmark or use the button above'
     statusEl.className = 'endpoint-status'
+    pickBtn.textContent = `📍 Click on map to set ${which === 'from' ? 'Start' : 'End'}`
     pickBtn.style.display = 'block'
   }
   updateGoBtn()
@@ -464,19 +504,33 @@ document.getElementById('to-select').addEventListener('change', () => {
   if (currentMode === 'route') drawRouteMarkers()
 })
 
+function showProgress(pct) {
+  const bar = document.getElementById('rt-progress')
+  bar.classList.add('active')
+  bar.style.width = pct + '%'
+}
+function hideProgress() {
+  const bar = document.getElementById('rt-progress')
+  bar.style.width = '100%'
+  setTimeout(() => { bar.classList.remove('active'); bar.style.width = '0%' }, 400)
+}
+
 document.getElementById('go-btn').addEventListener('click', async () => {
   if (!routeFrom || !routeTo) return
   if (routeFrom.vertexId === routeTo.vertexId) { setStatus('rt-status', 'Start and end must be different.'); return }
 
-  setStatus('rt-status', 'Finding route…')
+  setStatus('rt-status', 'Calculating route…')
   document.getElementById('go-btn').disabled = true
   document.getElementById('rt-result').style.display = 'none'
+  showProgress(30)
 
   try {
+    showProgress(60)
     const [geoData, distData] = await Promise.all([
       rpc('get_vertex_route_geojson', { from_vertex_id: routeFrom.vertexId, to_vertex_id: routeTo.vertexId }),
       rpc('get_random_point_distances', { vertex_ids: [routeFrom.vertexId, routeTo.vertexId] })
     ])
+    showProgress(90)
     drawRoute(geoData)
     drawRouteMarkers()
     fitRoute([60, 60, 60, 340])
@@ -486,8 +540,10 @@ document.getElementById('go-btn').addEventListener('click', async () => {
     document.getElementById('rt-drive').textContent = fmtDrive(distM)
     document.getElementById('rt-result').style.display = 'block'
     setStatus('rt-status', `${routeFrom.name} → ${routeTo.name}`)
+    hideProgress()
   } catch (err) {
     setStatus('rt-status', 'Error: ' + err.message, true)
+    hideProgress()
   } finally {
     updateGoBtn()
   }
