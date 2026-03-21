@@ -4,47 +4,65 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Map Collection</title>
+  <meta name="description" content="A personal gallery of interactive maps built with OpenLayers, MapLibre GL, and CesiumJS." />
+  <!-- Favicon: map pin SVG -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗺️</text></svg>" />
   <link rel="stylesheet" href="assets/gallery.css" />
 </head>
 <body>
   <header>
     <h1>🗺️ Map Collection</h1>
-    <p>A personal collection of interactive maps using various mapping libraries.</p>
+    <p>A personal collection of interactive maps built with various mapping libraries.</p>
   </header>
 
-  <div class="gallery" id="gallery">
-    <p style="color: #8b8fa8; text-align:center; grid-column:1/-1;">Loading maps…</p>
+  <div class="gallery-wrap">
+    <div class="gallery" id="gallery">
+      <p class="gallery-message">Loading maps…</p>
+    </div>
   </div>
 
   <footer>
-    <p>Built with OpenLayers · MapLibre · Cesium · Hosted on GitHub Pages</p>
+    <span>Built with</span>
+    <a href="https://openlayers.org/" target="_blank" rel="noopener">OpenLayers</a>
+    <span>·</span>
+    <a href="https://maplibre.org/" target="_blank" rel="noopener">MapLibre</a>
+    <span>·</span>
+    <a href="https://cesium.com/" target="_blank" rel="noopener">CesiumJS</a>
+    <span>· Hosted on GitHub Pages</span>
   </footer>
 
   <script>
-    const PLACEHOLDER_ICONS = {
+    const ICONS = {
       'OpenLayers': '🌍',
-      'MapLibre': '🗺️',
-      'Cesium': '🌐',
+      'MapLibre':   '🗺️',
+      'Cesium':     '🌐',
     };
 
     async function loadGallery() {
       const gallery = document.getElementById('gallery');
       try {
         const res = await fetch('maps/maps.json');
-        if (!res.ok) throw new Error('Failed to fetch maps.json');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const maps = await res.json();
 
+        if (!maps.length) {
+          gallery.innerHTML = '<p class="gallery-message">No maps yet.</p>';
+          return;
+        }
+
         gallery.innerHTML = maps.map(m => {
-          const icon = PLACEHOLDER_ICONS[m.library] || '📍';
-          const thumbHtml = `
-            <div class="card-thumb">
-              <span class="placeholder-icon">${icon}</span>
-            </div>`;
-          // if thumb.png exists, we'd swap it in; for now always use placeholder
+          const icon = ICONS[m.library] || '📍';
           const tags = (m.tags || []).map(t => `<span class="tag">${t}</span>`).join('');
           return `
             <a class="card" href="maps/${m.id}/index.html">
-              ${thumbHtml}
+              <div class="card-thumb">
+                <img
+                  src="maps/${m.id}/thumb.png"
+                  alt="${m.title} thumbnail"
+                  onerror="this.style.display='none'"
+                />
+                <span class="placeholder-icon" aria-hidden="true">${icon}</span>
+              </div>
               <div class="card-body">
                 <div class="card-title">${m.title}</div>
                 <div class="card-desc">${m.description}</div>
@@ -56,7 +74,7 @@
             </a>`;
         }).join('');
       } catch (e) {
-        gallery.innerHTML = `<p style="color:#e55;grid-column:1/-1">Error loading maps: ${e.message}</p>`;
+        gallery.innerHTML = `<p class="gallery-message error">⚠ Could not load maps: ${e.message}</p>`;
       }
     }
 
