@@ -124,28 +124,45 @@
       #map { flex: 1; min-height: 52vw; }
     }
 
-    /* ── OL controls: dark theme ── */
-    .ol-control button {
-      background: rgba(15,17,23,0.88) !important;
-      color: #e8eaf0 !important;
-      border: 1px solid #2a2d3a !important;
-      border-radius: 6px !important;
-      font-size: 1rem !important;
-      width: 1.75rem !important;
-      height: 1.75rem !important;
-      line-height: 1.75rem !important;
-      backdrop-filter: blur(8px) !important;
-      -webkit-backdrop-filter: blur(8px) !important;
+    /* ── OL controls: dark theme (high specificity, no !important needed) ── */
+    #map .ol-control button {
+      background: rgba(15,17,23,0.88);
+      color: #e8eaf0;
+      border: 1px solid #2a2d3a;
+      border-radius: 6px;
+      font-size: 1.1rem;
+      width: 1.9rem;
+      height: 1.9rem;
     }
-    .ol-control button:hover {
-      background: rgba(74,144,217,0.35) !important;
-      color: #fff !important;
-      border-color: #4a90d9 !important;
+    #map .ol-control button:hover {
+      background: rgba(74,144,217,0.4);
+      border-color: #4a90d9;
     }
-    .ol-zoom { top: auto !important; bottom: 1.5rem !important; left: 1rem !important; right: auto !important; }
-    .ol-attribution { bottom: 0.25rem !important; right: 0.25rem !important; font-size: 0.65rem !important; }
-    .ol-attribution, .ol-attribution a { color: #6b7280 !important; background: rgba(15,17,23,0.7) !important; }
-    .ol-attribution button { display: none !important; }
+    #map .ol-zoom { top: auto; bottom: 1.5rem; left: 0.75rem; }
+    #map .ol-attribution { background: rgba(15,17,23,0.7); border-radius: 4px; }
+    #map .ol-attribution ul { font-size: 0.65rem; color: #6b7280; }
+    #map .ol-attribution a { color: #6b7280; }
+    #map .ol-rotate { display: none; }
+
+    /* ── Pick-on-map button ── */
+    .pick-btn {
+      width: 100%;
+      margin: 0.2rem 0 0.35rem;
+      padding: 0.45rem 0.6rem;
+      background: rgba(245,158,11,0.12);
+      border: 1px dashed #f59e0b;
+      border-radius: 7px;
+      color: #f59e0b;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: crosshair;
+      text-align: left;
+      display: none;
+    }
+    .pick-btn.active {
+      background: rgba(245,158,11,0.28);
+      box-shadow: 0 0 0 2px rgba(245,158,11,0.35);
+    }
   </style>
 </head>
 <body>
@@ -169,11 +186,13 @@
 
       <label for="from-select">From</label>
       <select id="from-select"><option value="">— click on map —</option></select>
-      <div class="endpoint-status" id="from-status">Click on map to set this point</div>
+      <button class="pick-btn" id="from-pick-btn">📍 Click on map to set Start</button>
+      <div class="endpoint-status" id="from-status">Select a landmark or click the button above</div>
 
       <label for="to-select">To</label>
       <select id="to-select"><option value="">— click on map —</option></select>
-      <div class="endpoint-status" id="to-status">Click on map to set this point</div>
+      <button class="pick-btn" id="to-pick-btn">📍 Click on map to set End</button>
+      <div class="endpoint-status" id="to-status">Select a landmark or click the button above</div>
 
       <button class="btn" id="go-btn" disabled style="margin-top:0.5rem">Find Route</button>
       <button class="btn btn-outline" id="route-clear-btn">Clear</button>
@@ -358,20 +377,41 @@ function resetAll() {
 let landmarks = []
 let routeFrom = null  // { vertexId, coord, name, type: 'landmark'|'road' }
 let routeTo   = null
+let pickingFor = null  // 'from' | 'to' | null
+
+function setPickingFor(which) {
+  pickingFor = which
+  ;['from', 'to'].forEach(w => {
+    const btn = document.getElementById(`${w}-pick-btn`)
+    btn.classList.toggle('active', w === which)
+  })
+  map.getTargetElement().style.cursor = which ? 'crosshair' : ''
+  if (which) setStatus('rt-status', `Click on the map to set the ${which === 'from' ? 'Start' : 'End'} point`)
+}
 
 function updateEndpointStatus(which) {
   const sel = document.getElementById(`${which}-select`)
   const statusEl = document.getElementById(`${which}-status`)
+  const pickBtn = document.getElementById(`${which}-pick-btn`)
   const point = which === 'from' ? routeFrom : routeTo
   if (sel.value !== '') {
-    statusEl.textContent = 'Landmark selected'
+    statusEl.textContent = '✓ Landmark selected'
+    statusEl.className = 'endpoint-status set'
+    pickBtn.style.display = 'none'
   } else if (point) {
-    statusEl.textContent = '📍 Point snapped to road'
+    statusEl.textContent = '✓ Point snapped to road'
+    statusEl.className = 'endpoint-status set'
+    pickBtn.style.display = 'none'
   } else {
-    statusEl.textContent = 'Click on map to set this point'
+    statusEl.textContent = 'Select a landmark or use the button above'
+    statusEl.className = 'endpoint-status'
+    pickBtn.style.display = 'block'
   }
   updateGoBtn()
 }
+
+document.getElementById('from-pick-btn').addEventListener('click', () => setPickingFor(pickingFor === 'from' ? null : 'from'))
+document.getElementById('to-pick-btn').addEventListener('click',   () => setPickingFor(pickingFor === 'to'   ? null : 'to'))
 
 function updateGoBtn() {
   document.getElementById('go-btn').disabled = !(routeFrom && routeTo)
@@ -474,6 +514,7 @@ document.getElementById('go-btn').addEventListener('click', async () => {
 document.getElementById('route-clear-btn').addEventListener('click', () => {
   routeFrom = null
   routeTo = null
+  setPickingFor(null)
   document.getElementById('from-select').value = ''
   document.getElementById('to-select').value = ''
   routeSource.clear()
@@ -657,15 +698,6 @@ map.on('click', (e) => {
 // ── Init ──────────────────────────────────────────────────────────────────────
 loadLandmarks()
 
-// Style OL controls via JS (beats CSS specificity issues)
-map.once('rendercomplete', () => {
-  document.querySelectorAll('#map .ol-control button').forEach(btn => {
-    Object.assign(btn.style, {
-      background: 'rgba(15,17,23,0.9)', color: '#e8eaf0',
-      border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px',
-      width: '2rem', height: '2rem', fontSize: '1.1rem', fontWeight: '600',
-      cursor: 'pointer', transition: 'background 0.15s'
-    })
     btn.onmouseenter = () => btn.style.background = 'rgba(74,144,217,0.5)'
     btn.onmouseleave = () => btn.style.background = 'rgba(15,17,23,0.9)'
   })
