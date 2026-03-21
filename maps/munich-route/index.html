@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ljubljana Route Finder · Map Collection</title>
-  <meta name="description" content="Find routes between Ljubljana landmarks, click any two points, or solve TSP for up to 8 stops. Real road distances via pgRouting." />
+  <title>München Route Finder · Map Collection</title>
+  <meta name="description" content="Find routes between Munich landmarks, click any two points, or solve TSP for up to 8 stops. Real road distances via pgRouting." />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗺️</text></svg>" />
 
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@10.3.1/dist/ol.css" />
@@ -127,7 +127,7 @@
   <!-- ── Left panel ── -->
   <div id="panel">
     <div class="panel-header">
-      <h2>Ljubljana Route Finder</h2>
+      <h2>München Route Finder</h2>
       <p>Real road routes via pgRouting + Supabase</p>
     </div>
 
@@ -205,7 +205,7 @@ async function rpc(name, params = {}) {
 }
 
 // ── Map ───────────────────────────────────────────────────────────────────────
-const LJ_EXTENT = ol.proj.transformExtent([14.41, 45.98, 14.62, 46.12], 'EPSG:4326', 'EPSG:3857')
+const MC_EXTENT = ol.proj.transformExtent([11.41, 48.06, 11.72, 48.22], 'EPSG:4326', 'EPSG:3857')
 
 const map = new ol.Map({
   target: 'map',
@@ -215,7 +215,7 @@ const map = new ol.Map({
       attributions: '© <a href="https://carto.com/">CARTO</a> © <a href="https://www.openstreetmap.org/">OSM</a> contributors',
     })
   })],
-  view: new ol.View({ center: ol.proj.fromLonLat([14.5058, 46.0511]), zoom: 14, minZoom: 11, maxZoom: 18, extent: LJ_EXTENT }),
+  view: new ol.View({ center: ol.proj.fromLonLat([11.576, 48.137]), zoom: 13, minZoom: 11, maxZoom: 18, extent: MC_EXTENT }),
 })
 
 // ── Vector layers ─────────────────────────────────────────────────────────────
@@ -321,12 +321,10 @@ document.querySelectorAll('.tab').forEach(tab => {
 function resetAll() {
   routeSource.clear()
   markerSource.clear()
-  // Mode B
   locState = { step: 0, fromVid: null, toVid: null }
   document.getElementById('loc-instruction').innerHTML = 'Click on the map to set your <strong style="color:#22c55e">START</strong> point.'
   document.getElementById('loc-result').style.display = 'none'
   setStatus('loc-status', '')
-  // Mode C
   tspStops = []
   refreshTSPUI()
   document.getElementById('tsp-result').style.display = 'none'
@@ -338,7 +336,7 @@ let landmarks = []
 
 async function loadLandmarks() {
   try {
-    landmarks = await rpc('get_landmarks')
+    landmarks = await rpc('get_munich_landmarks')
     const fromSel = document.getElementById('from-select')
     const toSel   = document.getElementById('to-select')
     fromSel.innerHTML = '<option value="">— Select start —</option>'
@@ -388,8 +386,8 @@ document.getElementById('go-btn').addEventListener('click', async () => {
 
   try {
     const [geoData, distData] = await Promise.all([
-      rpc('get_route_geojson', { from_landmark_id: fromId, to_landmark_id: toId }),
-      rpc('get_random_point_distances', { vertex_ids: [fromLm.vertex_id, toLm.vertex_id] })
+      rpc('get_munich_route_geojson', { from_landmark_id: fromId, to_landmark_id: toId }),
+      rpc('get_munich_random_distances', { vertex_ids: [fromLm.vertex_id, toLm.vertex_id] })
     ])
     drawRoute(geoData)
     drawLandmarks()
@@ -425,7 +423,7 @@ async function handleLocationClick(coord) {
   if (locState.step === 0) {
     setStatus('loc-status', 'Snapping to nearest road…')
     try {
-      const res = await rpc('get_nearest_vertex', { lat, lon })
+      const res = await rpc('get_munich_nearest_vertex', { lat, lon })
       const v = Array.isArray(res) ? res[0] : res
       if (!v) throw new Error('No nearby road found')
       locState.fromVid = v.vertex_id
@@ -440,7 +438,7 @@ async function handleLocationClick(coord) {
   } else if (locState.step === 1) {
     setStatus('loc-status', 'Snapping to nearest road…')
     try {
-      const res = await rpc('get_nearest_vertex', { lat, lon })
+      const res = await rpc('get_munich_nearest_vertex', { lat, lon })
       const v = Array.isArray(res) ? res[0] : res
       if (!v) throw new Error('No nearby road found')
       locState.toVid = v.vertex_id
@@ -452,8 +450,8 @@ async function handleLocationClick(coord) {
       setStatus('loc-status', 'Finding route…')
 
       const [geoData, distData] = await Promise.all([
-        rpc('get_vertex_route_geojson', { from_vertex_id: locState.fromVid, to_vertex_id: locState.toVid }),
-        rpc('get_random_point_distances', { vertex_ids: [locState.fromVid, locState.toVid] })
+        rpc('get_munich_vertex_route', { from_vertex_id: locState.fromVid, to_vertex_id: locState.toVid }),
+        rpc('get_munich_random_distances', { vertex_ids: [locState.fromVid, locState.toVid] })
       ])
       drawRoute(geoData)
       fitRoute([60, 60, 60, 60])
@@ -471,7 +469,7 @@ async function handleLocationClick(coord) {
 }
 
 // ── MODE C: TSP ───────────────────────────────────────────────────────────────
-let tspStops = [] // [{vertex_id, snap_lat, snap_lon, coord}]
+let tspStops = []
 
 function refreshTSPUI() {
   const n = tspStops.length
@@ -508,7 +506,6 @@ document.getElementById('tsp-clear-btn').addEventListener('click', () => {
 document.getElementById('tsp-find-btn').addEventListener('click', runTSP)
 
 async function handleTSPClick(coord, pixel) {
-  // Check if clicking on existing stop
   const hit = map.forEachFeatureAtPixel(pixel, f => f, { layerFilter: l => l === markerLayer })
   if (hit && hit.get('role') === 'tsp') {
     const idx = hit.get('tspIdx')
@@ -526,7 +523,7 @@ async function handleTSPClick(coord, pixel) {
   const [lon, lat] = ol.proj.toLonLat(coord)
   setStatus('tsp-status', 'Snapping to nearest road…')
   try {
-    const res = await rpc('get_nearest_vertex', { lat, lon })
+    const res = await rpc('get_munich_nearest_vertex', { lat, lon })
     const v = Array.isArray(res) ? res[0] : res
     if (!v) throw new Error('No nearby road found')
     tspStops.push({ vertex_id: v.vertex_id, coord: ol.proj.fromLonLat([v.snap_lon, v.snap_lat]) })
@@ -575,7 +572,7 @@ async function runTSP() {
 
   try {
     const vids = tspStops.map(s => s.vertex_id)
-    const distances = await rpc('get_random_point_distances', { vertex_ids: vids })
+    const distances = await rpc('get_munich_random_distances', { vertex_ids: vids })
 
     const n = vids.length
     const idxMap = new Map(vids.map((id, i) => [String(id), i]))
@@ -592,7 +589,7 @@ async function runTSP() {
     routeSource.clear()
     for (let k = 0; k < order.length - 1; k++) {
       try {
-        const geoData = await rpc('get_vertex_route_geojson', { from_vertex_id: vids[order[k]], to_vertex_id: vids[order[k+1]] })
+        const geoData = await rpc('get_munich_vertex_route', { from_vertex_id: vids[order[k]], to_vertex_id: vids[order[k+1]] })
         appendRoute(geoData)
       } catch (e) { console.warn('Segment failed:', e) }
     }

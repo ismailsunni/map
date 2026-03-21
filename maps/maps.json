@@ -1,5 +1,14 @@
 [
   {
+    "id": "munich-route",
+    "title": "München Route Finder",
+    "description": "Find routes between 25 Munich landmarks, click any two points, or solve TSP for up to 8 stops. Real road distances via pgRouting.",
+    "library": "OpenLayers",
+    "libraryColor": "#4a90d9",
+    "thumbnail": "thumb.png",
+    "tags": ["routing", "pgrouting", "supabase", "munich", "germany", "tsp"]
+  },
+  {
     "id": "ljubljana-route",
     "title": "Ljubljana Route Finder",
     "description": "Find the real road route between 25 Ljubljana landmarks. Powered by pgRouting on Supabase — actual street distances, walk and drive time estimates.",
