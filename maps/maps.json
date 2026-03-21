@@ -1,5 +1,14 @@
 [
   {
+    "id": "ljubljana-route",
+    "title": "Ljubljana Route Finder",
+    "description": "Find the real road route between 25 Ljubljana landmarks. Powered by pgRouting on Supabase — actual street distances, walk and drive time estimates.",
+    "library": "OpenLayers",
+    "libraryColor": "#4a90d9",
+    "thumbnail": "thumb.png",
+    "tags": ["routing", "pgrouting", "supabase", "ljubljana", "slovenia"]
+  },
+  {
     "id": "daylight-duration",
     "title": "Daylight Duration",
     "description": "How many hours of daylight — or fasting — does each latitude get? Switch between Daylight and Fasting mode (6 Islamic methods + custom), animate through the year, and see polar effects.",

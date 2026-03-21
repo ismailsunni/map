@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ljubljana Route Finder</title>
+
+  <!-- OpenLayers -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@10.3.0/ol.css" />
+  <script src="https://cdn.jsdelivr.net/npm/ol@10.3.0/dist/ol.js"></script>
+
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+
+  <!-- Shared styles -->
+  <link rel="stylesheet" href="../../assets/gallery.css" />
+
+  <style>
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+
+    #map { width: 100%; height: 100vh; }
+
+    /* ── Panel ── */
+    #panel {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      width: 280px;
+      background: rgba(15, 17, 23, 0.92);
+      backdrop-filter: blur(10px);
+      border: 1px solid #2a2d3a;
+      border-radius: 12px;
+      padding: 1rem;
+      color: #e8eaf0;
+      z-index: 100;
+    }
+
+    #panel h2 {
+      margin: 0 0 0.1rem;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    #panel p.sub {
+      margin: 0 0 0.9rem;
+      font-size: 0.72rem;
+      color: #6b7280;
+    }
+
+    label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #8b8fa8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.3rem;
+    }
+
+    select {
+      width: 100%;
+      background: #1a1d27;
+      border: 1px solid #2a2d3a;
+      color: #e8eaf0;
+      padding: 0.5rem 0.6rem;
+      border-radius: 7px;
+      font-size: 0.82rem;
+      margin-bottom: 0.75rem;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238b8fa8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.6rem center;
+    }
+
+    select:focus { outline: none; border-color: #4a90d9; }
+
+    button#go-btn {
+      width: 100%;
+      background: #4a90d9;
+      color: #fff;
+      border: none;
+      padding: 0.6rem;
+      border-radius: 7px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+
+    button#go-btn:hover { opacity: 0.85; }
+    button#go-btn:disabled { background: #2a2d3a; color: #4b5563; cursor: not-allowed; }
+
+    /* ── Result ── */
+    #result {
+      margin-top: 0.8rem;
+      padding-top: 0.8rem;
+      border-top: 1px solid #2a2d3a;
+      display: none;
+    }
+
+    #result .stat {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 0.3rem;
+    }
+
+    #result .stat-label { font-size: 0.72rem; color: #6b7280; }
+    #result .stat-value { font-size: 1rem; font-weight: 700; color: #4a90d9; }
+
+    /* ── Status ── */
+    #status {
+      margin-top: 0.6rem;
+      font-size: 0.75rem;
+      color: #6b7280;
+      min-height: 1rem;
+    }
+
+    /* ── Landmark tooltip ── */
+    .ol-tooltip {
+      position: absolute;
+      background: rgba(15,17,23,0.9);
+      border: 1px solid #2a2d3a;
+      color: #e8eaf0;
+      padding: 4px 8px;
+      border-radius: 5px;
+      font-size: 0.72rem;
+      white-space: nowrap;
+      pointer-events: none;
+      transform: translate(-50%, -130%);
+    }
+  </style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<!-- Control panel -->
+<div id="panel">
+  <h2>🗺️ Ljubljana Route</h2>
+  <p class="sub">Find the road route between two landmarks</p>
+
+  <label for="from-select">From</label>
+  <select id="from-select"><option value="">Loading…</option></select>
+
+  <label for="to-select">To</label>
+  <select id="to-select"><option value="">Loading…</option></select>
+
+  <button id="go-btn" disabled>Find Route</button>
+
+  <div id="result">
+    <div class="stat">
+      <span class="stat-label">Distance</span>
+      <span class="stat-value" id="dist-val">—</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Est. walk</span>
+      <span class="stat-value" id="walk-val">—</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Est. drive</span>
+      <span class="stat-value" id="drive-val">—</span>
+    </div>
+  </div>
+
+  <div id="status">Loading landmarks…</div>
+</div>
+
+<!-- Tooltip overlay -->
+<div id="tooltip" class="ol-tooltip"></div>
+
+<a class="back-btn" href="../../index.html">← Gallery</a>
+
+<script>
+// ── Supabase ──────────────────────────────────────────────────────────────────
+const SUPABASE_URL  = 'https://ygpvdkkmlyasocanvtfl.supabase.co'
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlncHZka2ttbHlhc29jYW52dGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMzY0NTksImV4cCI6MjA4OTYxMjQ1OX0.Ozwt_DYrrxdljCcowhbIUaux4hal0wVoM2wft_kguUk'
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON)
+
+// ── Ljubljana bounds & center ─────────────────────────────────────────────────
+const LJ_CENTER = ol.proj.fromLonLat([14.5058, 46.0511])
+const LJ_EXTENT = ol.proj.transformExtent(
+  [14.41, 45.98, 14.62, 46.12],   // slightly wider than data bbox
+  'EPSG:4326', 'EPSG:3857'
+)
+
+// ── Map ───────────────────────────────────────────────────────────────────────
+const map = new ol.Map({
+  target: 'map',
+  layers: [
+    new ol.layer.Tile({
+      source: new ol.source.XYZ({
+        url: 'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+        attributions: '© <a href="https://carto.com/">CARTO</a> © <a href="https://www.openstreetmap.org/">OSM</a> contributors',
+      })
+    })
+  ],
+  view: new ol.View({
+    center: LJ_CENTER,
+    zoom: 14,
+    minZoom: 12,
+    maxZoom: 18,
+    extent: LJ_EXTENT,
+  }),
+})
+
+// ── Layers ────────────────────────────────────────────────────────────────────
+const routeSource    = new ol.source.Vector()
+const landmarkSource = new ol.source.Vector()
+
+const routeLayer = new ol.layer.Vector({
+  source: routeSource,
+  style: new ol.style.Style({
+    stroke: new ol.style.Stroke({ color: '#4a90d9', width: 5, lineCap: 'round', lineJoin: 'round' })
+  })
+})
+
+const landmarkLayer = new ol.layer.Vector({
+  source: landmarkSource,
+  style: (feature) => {
+    const role = feature.get('role')
+    const color = role === 'from' ? '#22c55e' : role === 'to' ? '#ef4444' : '#4a90d9'
+    return new ol.style.Style({
+      image: new ol.style.Circle({
+        radius: role ? 9 : 6,
+        fill:   new ol.style.Fill({ color }),
+        stroke: new ol.style.Stroke({ color: '#fff', width: 2 })
+      }),
+      text: role ? new ol.style.Text({
+        text: feature.get('name'),
+        offsetY: -16,
+        font: 'bold 11px sans-serif',
+        fill:   new ol.style.Fill({ color: '#fff' }),
+        stroke: new ol.style.Stroke({ color: '#000', width: 3 })
+      }) : null
+    })
+  }
+})
+
+map.addLayer(routeLayer)
+map.addLayer(landmarkLayer)
+
+// ── Tooltip ───────────────────────────────────────────────────────────────────
+const tooltipEl = document.getElementById('tooltip')
+const tooltipOverlay = new ol.Overlay({ element: tooltipEl, positioning: 'bottom-center' })
+map.addOverlay(tooltipOverlay)
+
+map.on('pointermove', (e) => {
+  const feature = map.forEachFeatureAtPixel(e.pixel, f => f, { layerFilter: l => l === landmarkLayer })
+  if (feature && feature.get('name')) {
+    tooltipEl.style.display = 'block'
+    tooltipEl.textContent = feature.get('name')
+    tooltipOverlay.setPosition(e.coordinate)
+  } else {
+    tooltipEl.style.display = 'none'
+  }
+})
+
+// ── Landmarks ─────────────────────────────────────────────────────────────────
+let landmarks = []
+
+async function loadLandmarks() {
+  const { data, error } = await db.rpc('get_landmarks')
+  if (error) { setStatus('Failed to load landmarks: ' + error.message); return }
+
+  landmarks = data
+  const fromSel = document.getElementById('from-select')
+  const toSel   = document.getElementById('to-select')
+
+  fromSel.innerHTML = '<option value="">— Select start —</option>'
+  toSel.innerHTML   = '<option value="">— Select end —</option>'
+
+  data.forEach(lm => {
+    const opt = (v, t) => `<option value="${v}">${t}</option>`
+    fromSel.insertAdjacentHTML('beforeend', opt(lm.id, lm.name))
+    toSel.insertAdjacentHTML('beforeend',   opt(lm.id, lm.name))
+  })
+
+  // Draw all landmarks as neutral dots
+  landmarkSource.clear()
+  data.forEach(lm => {
+    const f = new ol.Feature({
+      geometry: new ol.geom.Point(ol.proj.fromLonLat([lm.lon, lm.lat])),
+      name: lm.name,
+      id: lm.id,
+      role: null,
+    })
+    landmarkSource.addFeature(f)
+  })
+
+  document.getElementById('go-btn').disabled = false
+  setStatus('Select two landmarks to find a route.')
+}
+
+// ── UI events ─────────────────────────────────────────────────────────────────
+function highlightSelected() {
+  const fromId = +document.getElementById('from-select').value
+  const toId   = +document.getElementById('to-select').value
+  landmarkSource.getFeatures().forEach(f => {
+    const id = f.get('id')
+    f.set('role', id === fromId ? 'from' : id === toId ? 'to' : null)
+  })
+  landmarkLayer.changed()
+}
+
+document.getElementById('from-select').addEventListener('change', highlightSelected)
+document.getElementById('to-select').addEventListener('change', highlightSelected)
+
+document.getElementById('go-btn').addEventListener('click', findRoute)
+
+// ── Routing ───────────────────────────────────────────────────────────────────
+async function findRoute() {
+  const fromId = +document.getElementById('from-select').value
+  const toId   = +document.getElementById('to-select').value
+
+  if (!fromId || !toId) { setStatus('Please select both a start and end landmark.'); return }
+  if (fromId === toId)  { setStatus('Start and end must be different.'); return }
+
+  setStatus('Finding route…')
+  document.getElementById('go-btn').disabled = true
+  document.getElementById('result').style.display = 'none'
+  routeSource.clear()
+
+  try {
+    // Get distance
+    const { data: distData, error: distErr } = await db.rpc('get_tsp_distances', {
+      landmark_ids: [fromId, toId]
+    })
+    if (distErr) throw distErr
+
+    const pair = distData.find(r => r.from_landmark === fromId && r.to_landmark === toId)
+    const distM = pair?.cost_m ?? 0
+
+    // Get route geometry
+    const { data: geoData, error: geoErr } = await db.rpc('get_route_geojson', {
+      from_landmark_id: fromId,
+      to_landmark_id:   toId
+    })
+    if (geoErr) throw geoErr
+
+    // Draw route
+    if (geoData) {
+      const geojson  = JSON.parse(geoData)
+      const format   = new ol.format.GeoJSON()
+      const features = format.readFeatures(geojson, {
+        dataProjection: 'EPSG:4326',
+        featureProjection: 'EPSG:3857'
+      })
+      routeSource.addFeatures(features)
+
+      // Zoom to fit route + landmarks
+      const extent = routeSource.getExtent()
+      map.getView().fit(extent, { padding: [80, 320, 80, 80], maxZoom: 16, duration: 600 })
+    }
+
+    // Show stats
+    const km    = (distM / 1000).toFixed(2)
+    const walkMin = Math.round(distM / 83)   // ~5 km/h
+    const driveMin = Math.round(distM / 417) // ~25 km/h city driving
+    const walkStr  = walkMin < 60 ? `${walkMin} min` : `${Math.floor(walkMin/60)}h ${walkMin%60}m`
+    const driveStr = driveMin < 1 ? '< 1 min' : `${driveMin} min`
+
+    document.getElementById('dist-val').textContent  = `${km} km`
+    document.getElementById('walk-val').textContent  = walkStr
+    document.getElementById('drive-val').textContent = driveStr
+    document.getElementById('result').style.display  = 'block'
+
+    const fromName = landmarks.find(l => l.id === fromId)?.name
+    const toName   = landmarks.find(l => l.id === toId)?.name
+    setStatus(`Route: ${fromName} → ${toName}`)
+
+  } catch (err) {
+    setStatus('Error: ' + (err.message ?? err))
+  } finally {
+    document.getElementById('go-btn').disabled = false
+  }
+}
+
+function setStatus(msg) {
+  document.getElementById('status').textContent = msg
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+loadLandmarks()
+</script>
+</body>
+</html>
