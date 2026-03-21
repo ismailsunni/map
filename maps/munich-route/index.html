@@ -64,11 +64,15 @@
     select {
       width: 100%; background: #1a1d27; border: 1px solid #2a2d3a; color: #e8eaf0;
       padding: 0.45rem 0.55rem; border-radius: 7px; font-size: 0.8rem;
-      margin-bottom: 0.65rem; cursor: pointer; appearance: none;
+      margin-bottom: 0.3rem; cursor: pointer; appearance: none;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238b8fa8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
       background-repeat: no-repeat; background-position: right 0.55rem center;
     }
     select:focus { outline: none; border-color: #4a90d9; }
+
+    .endpoint-status {
+      font-size: 0.68rem; color: #6b7280; margin-bottom: 0.55rem; margin-top: 0; min-height: 1.2em;
+    }
 
     .btn {
       width: 100%; background: #4a90d9; color: #fff; border: none;
@@ -119,6 +123,29 @@
       #panel { width: 100%; max-height: 48vh; border-right: none; border-bottom: 1px solid #2a2d3a; }
       #map { flex: 1; min-height: 52vw; }
     }
+
+    /* ── OL controls: dark theme ── */
+    .ol-control button {
+      background: rgba(15,17,23,0.88) !important;
+      color: #e8eaf0 !important;
+      border: 1px solid #2a2d3a !important;
+      border-radius: 6px !important;
+      font-size: 1rem !important;
+      width: 1.75rem !important;
+      height: 1.75rem !important;
+      line-height: 1.75rem !important;
+      backdrop-filter: blur(8px) !important;
+      -webkit-backdrop-filter: blur(8px) !important;
+    }
+    .ol-control button:hover {
+      background: rgba(74,144,217,0.35) !important;
+      color: #fff !important;
+      border-color: #4a90d9 !important;
+    }
+    .ol-zoom { top: auto !important; bottom: 1.5rem !important; left: 1rem !important; right: auto !important; }
+    .ol-attribution { bottom: 0.25rem !important; right: 0.25rem !important; font-size: 0.65rem !important; }
+    .ol-attribution, .ol-attribution a { color: #6b7280 !important; background: rgba(15,17,23,0.7) !important; }
+    .ol-attribution button { display: none !important; }
   </style>
 </head>
 <body>
@@ -132,44 +159,34 @@
     </div>
 
     <div class="tabs">
-      <button class="tab active" data-mode="landmark">Landmarks</button>
-      <button class="tab" data-mode="location">Any Point</button>
+      <button class="tab active" data-mode="route">Route</button>
       <button class="tab" data-mode="tsp">TSP</button>
     </div>
 
-    <!-- Mode A: Landmark-to-Landmark -->
-    <div class="mode-panel active" id="mode-landmark">
-      <p class="mode-instruction">Select two landmarks to find the shortest road route between them.</p>
+    <!-- Mode Route: combined landmark + any point -->
+    <div class="mode-panel active" id="mode-route">
+      <p class="mode-instruction">Pick landmarks or click the map for each endpoint, then find the route.</p>
 
       <label for="from-select">From</label>
-      <select id="from-select"><option value="">Loading…</option></select>
+      <select id="from-select"><option value="">— click on map —</option></select>
+      <div class="endpoint-status" id="from-status">Click on map to set this point</div>
 
       <label for="to-select">To</label>
-      <select id="to-select"><option value="">Loading…</option></select>
+      <select id="to-select"><option value="">— click on map —</option></select>
+      <div class="endpoint-status" id="to-status">Click on map to set this point</div>
 
-      <button class="btn" id="go-btn" disabled>Find Route</button>
+      <button class="btn" id="go-btn" disabled style="margin-top:0.5rem">Find Route</button>
+      <button class="btn btn-outline" id="route-clear-btn">Clear</button>
 
-      <div id="lm-result" class="result-card">
-        <div class="stat"><span class="stat-label">Distance</span><span class="stat-value" id="lm-dist">—</span></div>
-        <div class="stat"><span class="stat-label">Est. walk</span><span class="stat-value" id="lm-walk">—</span></div>
-        <div class="stat"><span class="stat-label">Est. drive</span><span class="stat-value" id="lm-drive">—</span></div>
+      <div id="rt-result" class="result-card">
+        <div class="stat"><span class="stat-label">Distance</span><span class="stat-value" id="rt-dist">—</span></div>
+        <div class="stat"><span class="stat-label">Est. walk</span><span class="stat-value" id="rt-walk">—</span></div>
+        <div class="stat"><span class="stat-label">Est. drive</span><span class="stat-value" id="rt-drive">—</span></div>
       </div>
-      <div class="status-line" id="lm-status">Loading landmarks…</div>
+      <div class="status-line" id="rt-status"></div>
     </div>
 
-    <!-- Mode B: Any Location -->
-    <div class="mode-panel" id="mode-location">
-      <p class="mode-instruction" id="loc-instruction">Click on the map to set your <strong style="color:#22c55e">START</strong> point.</p>
-      <button class="btn btn-outline" id="loc-clear-btn">Clear</button>
-      <div id="loc-result" class="result-card">
-        <div class="stat"><span class="stat-label">Distance</span><span class="stat-value" id="loc-dist">—</span></div>
-        <div class="stat"><span class="stat-label">Est. walk</span><span class="stat-value" id="loc-walk">—</span></div>
-        <div class="stat"><span class="stat-label">Est. drive</span><span class="stat-value" id="loc-drive">—</span></div>
-      </div>
-      <div class="status-line" id="loc-status"></div>
-    </div>
-
-    <!-- Mode C: TSP -->
+    <!-- Mode TSP -->
     <div class="mode-panel" id="mode-tsp">
       <p class="mode-instruction">Click on the map to add stops (max 8). Click a stop marker to remove it.</p>
       <div id="tsp-stops-info">No stops yet.</div>
@@ -302,7 +319,7 @@ function distFromMatrix(data, fromId, toId) {
 }
 
 // ── Mode management ───────────────────────────────────────────────────────────
-let currentMode = 'landmark'
+let currentMode = 'route'
 
 document.querySelectorAll('.tab').forEach(tab => {
   tab.addEventListener('click', () => {
@@ -314,47 +331,73 @@ document.querySelectorAll('.tab').forEach(tab => {
     tab.classList.add('active')
     document.getElementById(`mode-${mode}`).classList.add('active')
     currentMode = mode
-    if (mode === 'landmark') drawLandmarks()
+    if (mode === 'route') drawRouteMarkers()
   })
 })
 
 function resetAll() {
   routeSource.clear()
   markerSource.clear()
-  locState = { step: 0, fromVid: null, toVid: null }
-  document.getElementById('loc-instruction').innerHTML = 'Click on the map to set your <strong style="color:#22c55e">START</strong> point.'
-  document.getElementById('loc-result').style.display = 'none'
-  setStatus('loc-status', '')
+  // Route mode
+  routeFrom = null
+  routeTo = null
+  document.getElementById('from-select').value = ''
+  document.getElementById('to-select').value = ''
+  document.getElementById('rt-result').style.display = 'none'
+  setStatus('rt-status', '')
+  updateEndpointStatus('from')
+  updateEndpointStatus('to')
+  // TSP mode
   tspStops = []
   refreshTSPUI()
   document.getElementById('tsp-result').style.display = 'none'
   setStatus('tsp-status', '')
 }
 
-// ── MODE A: Landmark-to-Landmark ──────────────────────────────────────────────
+// ── MODE: Route (landmark + any point combined) ───────────────────────────────
 let landmarks = []
+let routeFrom = null  // { vertexId, coord, name, type: 'landmark'|'road' }
+let routeTo   = null
+
+function updateEndpointStatus(which) {
+  const sel = document.getElementById(`${which}-select`)
+  const statusEl = document.getElementById(`${which}-status`)
+  const point = which === 'from' ? routeFrom : routeTo
+  if (sel.value !== '') {
+    statusEl.textContent = 'Landmark selected'
+  } else if (point) {
+    statusEl.textContent = '📍 Point snapped to road'
+  } else {
+    statusEl.textContent = 'Click on map to set this point'
+  }
+  updateGoBtn()
+}
+
+function updateGoBtn() {
+  document.getElementById('go-btn').disabled = !(routeFrom && routeTo)
+}
 
 async function loadLandmarks() {
   try {
     landmarks = await rpc('get_munich_landmarks')
     const fromSel = document.getElementById('from-select')
     const toSel   = document.getElementById('to-select')
-    fromSel.innerHTML = '<option value="">— Select start —</option>'
-    toSel.innerHTML   = '<option value="">— Select end —</option>'
+    fromSel.innerHTML = '<option value="">— click on map —</option>'
+    toSel.innerHTML   = '<option value="">— click on map —</option>'
     landmarks.forEach(lm => {
       const o = `<option value="${lm.id}">${lm.name}</option>`
       fromSel.insertAdjacentHTML('beforeend', o)
       toSel.insertAdjacentHTML('beforeend', o)
     })
-    document.getElementById('go-btn').disabled = false
-    setStatus('lm-status', 'Select two landmarks to find a route.')
-    if (currentMode === 'landmark') drawLandmarks()
+    updateEndpointStatus('from')
+    updateEndpointStatus('to')
+    if (currentMode === 'route') drawRouteMarkers()
   } catch (err) {
-    setStatus('lm-status', 'Failed to load landmarks: ' + err.message, true)
+    setStatus('rt-status', 'Failed to load landmarks: ' + err.message, true)
   }
 }
 
-function drawLandmarks() {
+function drawRouteMarkers() {
   markerSource.clear()
   const fromId = +document.getElementById('from-select').value
   const toId   = +document.getElementById('to-select').value
@@ -366,109 +409,109 @@ function drawLandmarks() {
       label: role === 'from' ? lm.name : role === 'to' ? lm.name : null,
     }))
   })
+  // Add road-snapped markers if set
+  if (routeFrom && routeFrom.type === 'road') {
+    markerSource.addFeature(new ol.Feature({ geometry: new ol.geom.Point(routeFrom.coord), role: 'from', label: 'A', name: 'Start' }))
+  }
+  if (routeTo && routeTo.type === 'road') {
+    markerSource.addFeature(new ol.Feature({ geometry: new ol.geom.Point(routeTo.coord), role: 'to', label: 'B', name: 'End' }))
+  }
 }
 
-document.getElementById('from-select').addEventListener('change', () => { if (currentMode === 'landmark') drawLandmarks() })
-document.getElementById('to-select').addEventListener('change',   () => { if (currentMode === 'landmark') drawLandmarks() })
+document.getElementById('from-select').addEventListener('change', () => {
+  const val = document.getElementById('from-select').value
+  if (val !== '') {
+    const lm = landmarks.find(l => l.id === +val)
+    routeFrom = { vertexId: lm.vertex_id, coord: ol.proj.fromLonLat([lm.lon, lm.lat]), name: lm.name, type: 'landmark' }
+  } else {
+    routeFrom = null
+  }
+  updateEndpointStatus('from')
+  if (currentMode === 'route') drawRouteMarkers()
+})
+
+document.getElementById('to-select').addEventListener('change', () => {
+  const val = document.getElementById('to-select').value
+  if (val !== '') {
+    const lm = landmarks.find(l => l.id === +val)
+    routeTo = { vertexId: lm.vertex_id, coord: ol.proj.fromLonLat([lm.lon, lm.lat]), name: lm.name, type: 'landmark' }
+  } else {
+    routeTo = null
+  }
+  updateEndpointStatus('to')
+  if (currentMode === 'route') drawRouteMarkers()
+})
 
 document.getElementById('go-btn').addEventListener('click', async () => {
-  const fromId = +document.getElementById('from-select').value
-  const toId   = +document.getElementById('to-select').value
-  if (!fromId || !toId) { setStatus('lm-status', 'Please select both a start and end landmark.'); return }
-  if (fromId === toId)  { setStatus('lm-status', 'Start and end must be different.'); return }
+  if (!routeFrom || !routeTo) return
+  if (routeFrom.vertexId === routeTo.vertexId) { setStatus('rt-status', 'Start and end must be different.'); return }
 
-  const fromLm = landmarks.find(l => l.id === fromId)
-  const toLm   = landmarks.find(l => l.id === toId)
-
-  setStatus('lm-status', 'Finding route…')
+  setStatus('rt-status', 'Finding route…')
   document.getElementById('go-btn').disabled = true
-  document.getElementById('lm-result').style.display = 'none'
+  document.getElementById('rt-result').style.display = 'none'
 
   try {
     const [geoData, distData] = await Promise.all([
-      rpc('get_munich_route_geojson', { from_landmark_id: fromId, to_landmark_id: toId }),
-      rpc('get_munich_random_distances', { vertex_ids: [fromLm.vertex_id, toLm.vertex_id] })
+      rpc('get_munich_vertex_route', { from_vertex_id: routeFrom.vertexId, to_vertex_id: routeTo.vertexId }),
+      rpc('get_munich_random_distances', { vertex_ids: [routeFrom.vertexId, routeTo.vertexId] })
     ])
     drawRoute(geoData)
-    drawLandmarks()
+    drawRouteMarkers()
     fitRoute([60, 60, 60, 340])
-    const distM = distFromMatrix(distData, fromLm.vertex_id, toLm.vertex_id)
-    document.getElementById('lm-dist').textContent  = fmtDist(distM)
-    document.getElementById('lm-walk').textContent  = fmtWalk(distM)
-    document.getElementById('lm-drive').textContent = fmtDrive(distM)
-    document.getElementById('lm-result').style.display = 'block'
-    setStatus('lm-status', `${fromLm.name} → ${toLm.name}`)
+    const distM = distFromMatrix(distData, routeFrom.vertexId, routeTo.vertexId)
+    document.getElementById('rt-dist').textContent  = fmtDist(distM)
+    document.getElementById('rt-walk').textContent  = fmtWalk(distM)
+    document.getElementById('rt-drive').textContent = fmtDrive(distM)
+    document.getElementById('rt-result').style.display = 'block'
+    setStatus('rt-status', `${routeFrom.name} → ${routeTo.name}`)
   } catch (err) {
-    setStatus('lm-status', 'Error: ' + err.message, true)
+    setStatus('rt-status', 'Error: ' + err.message, true)
   } finally {
-    document.getElementById('go-btn').disabled = false
+    updateGoBtn()
   }
 })
 
-// ── MODE B: Any Location ──────────────────────────────────────────────────────
-let locState = { step: 0, fromVid: null, toVid: null }
-
-document.getElementById('loc-clear-btn').addEventListener('click', () => {
-  locState = { step: 0, fromVid: null, toVid: null }
+document.getElementById('route-clear-btn').addEventListener('click', () => {
+  routeFrom = null
+  routeTo = null
+  document.getElementById('from-select').value = ''
+  document.getElementById('to-select').value = ''
   routeSource.clear()
-  markerSource.clear()
-  document.getElementById('loc-instruction').innerHTML = 'Click on the map to set your <strong style="color:#22c55e">START</strong> point.'
-  document.getElementById('loc-result').style.display = 'none'
-  setStatus('loc-status', '')
+  document.getElementById('rt-result').style.display = 'none'
+  setStatus('rt-status', '')
+  updateEndpointStatus('from')
+  updateEndpointStatus('to')
+  drawRouteMarkers()
 })
 
-async function handleLocationClick(coord) {
+async function handleRouteClick(coord) {
+  const fromSel = document.getElementById('from-select')
+  const toSel   = document.getElementById('to-select')
+  // Set from if it's in click mode and not yet snapped; else set to
+  let which = null
+  if (fromSel.value === '' && !routeFrom) which = 'from'
+  else if (toSel.value === '' && !routeTo) which = 'to'
+  if (!which) return
+
   const [lon, lat] = ol.proj.toLonLat(coord)
-
-  if (locState.step === 0) {
-    setStatus('loc-status', 'Snapping to nearest road…')
-    try {
-      const res = await rpc('get_munich_nearest_vertex', { lat, lon })
-      const v = Array.isArray(res) ? res[0] : res
-      if (!v) throw new Error('No nearby road found')
-      locState.fromVid = v.vertex_id
-      const snapCoord = ol.proj.fromLonLat([v.snap_lon, v.snap_lat])
-      markerSource.clear()
-      markerSource.addFeature(new ol.Feature({ geometry: new ol.geom.Point(snapCoord), role: 'from', label: 'A', name: 'Start' }))
-      locState.step = 1
-      document.getElementById('loc-instruction').innerHTML = 'Now click to set your <strong style="color:#ef4444">END</strong> point.'
-      setStatus('loc-status', 'Start set. Click to place end point.')
-    } catch (err) { setStatus('loc-status', 'Error: ' + err.message, true) }
-
-  } else if (locState.step === 1) {
-    setStatus('loc-status', 'Snapping to nearest road…')
-    try {
-      const res = await rpc('get_munich_nearest_vertex', { lat, lon })
-      const v = Array.isArray(res) ? res[0] : res
-      if (!v) throw new Error('No nearby road found')
-      locState.toVid = v.vertex_id
-      const snapCoord = ol.proj.fromLonLat([v.snap_lon, v.snap_lat])
-      markerSource.getFeatures().filter(f => f.get('role') === 'to').forEach(f => markerSource.removeFeature(f))
-      markerSource.addFeature(new ol.Feature({ geometry: new ol.geom.Point(snapCoord), role: 'to', label: 'B', name: 'End' }))
-      document.getElementById('loc-instruction').innerHTML = 'Click to plan a new route, or use <strong>Clear</strong>.'
-      locState.step = 0
-      setStatus('loc-status', 'Finding route…')
-
-      const [geoData, distData] = await Promise.all([
-        rpc('get_munich_vertex_route', { from_vertex_id: locState.fromVid, to_vertex_id: locState.toVid }),
-        rpc('get_munich_random_distances', { vertex_ids: [locState.fromVid, locState.toVid] })
-      ])
-      drawRoute(geoData)
-      fitRoute([60, 60, 60, 60])
-      const distM = distFromMatrix(distData, locState.fromVid, locState.toVid)
-      document.getElementById('loc-dist').textContent  = fmtDist(distM)
-      document.getElementById('loc-walk').textContent  = fmtWalk(distM)
-      document.getElementById('loc-drive').textContent = fmtDrive(distM)
-      document.getElementById('loc-result').style.display = 'block'
-      setStatus('loc-status', 'Route found. Click to plan another.')
-    } catch (err) {
-      setStatus('loc-status', 'Error: ' + err.message, true)
-      locState.step = 1
+  setStatus('rt-status', `Snapping ${which === 'from' ? 'start' : 'end'} point to road…`)
+  try {
+    const res = await rpc('get_munich_nearest_vertex', { lat, lon })
+    const v = Array.isArray(res) ? res[0] : res
+    if (!v) throw new Error('No nearby road found')
+    const snapCoord = ol.proj.fromLonLat([v.snap_lon, v.snap_lat])
+    if (which === 'from') {
+      routeFrom = { vertexId: v.vertex_id, coord: snapCoord, name: 'Custom start', type: 'road' }
+    } else {
+      routeTo = { vertexId: v.vertex_id, coord: snapCoord, name: 'Custom end', type: 'road' }
     }
-  }
+    updateEndpointStatus(which)
+    drawRouteMarkers()
+    setStatus('rt-status', `${which === 'from' ? 'Start' : 'End'} point set.`)
+  } catch (err) { setStatus('rt-status', 'Error: ' + err.message, true) }
 }
 
-// ── MODE C: TSP ───────────────────────────────────────────────────────────────
+// ── MODE: TSP ─────────────────────────────────────────────────────────────────
 let tspStops = []
 
 function refreshTSPUI() {
@@ -607,8 +650,8 @@ async function runTSP() {
 
 // ── Map click dispatcher ──────────────────────────────────────────────────────
 map.on('click', (e) => {
-  if (currentMode === 'location') handleLocationClick(e.coordinate)
-  else if (currentMode === 'tsp')  handleTSPClick(e.coordinate, e.pixel)
+  if (currentMode === 'route') handleRouteClick(e.coordinate)
+  else if (currentMode === 'tsp') handleTSPClick(e.coordinate, e.pixel)
 })
 
 // ── Init ──────────────────────────────────────────────────────────────────────
