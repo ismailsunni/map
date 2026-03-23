@@ -6,21 +6,6 @@
   <title>Route Finder · Map Collection</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗺️</text></svg>" />
   <style>
-    /* back button */
-    .back-btn {
-      position: fixed; top: 1rem; left: 1rem; z-index: 200;
-      background: #fff; color: #374151;
-      padding: 0.35rem 0.75rem; border-radius: 6px;
-      font-size: 0.75rem; font-weight: 600;
-      text-decoration: none;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.12);
-      border: 1px solid #e5e7eb;
-      transition: background 0.15s;
-      white-space: nowrap;
-    }
-    .back-btn:hover { background: #f3f4f6; }
-  </style>
-  <style>
     *, *::before, *::after { box-sizing: border-box; }
     html, body { height: 100%; margin: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
     #map { width: 100%; height: 100%; }
@@ -37,7 +22,6 @@
       border-radius: 20px;
       box-shadow: 0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.08);
       overflow: hidden;
-      transition: box-shadow 0.2s;
     }
     #panel.minimized #panel-body { display: none; }
 
@@ -78,10 +62,10 @@
     #minimize-btn:hover { background: #e5e7eb; }
 
     #panel-body {
-      padding: 1rem 1.1rem 1.1rem;
+      padding: 0.9rem 1rem 1rem;
       display: flex;
       flex-direction: column;
-      gap: 0.75rem;
+      gap: 0.65rem;
     }
 
     /* ── City switcher ── */
@@ -98,117 +82,126 @@
     .city-btn.active { color: #374151; border-bottom-color: #374151; }
     .city-btn:hover:not(.active) { color: #6b7280; }
 
-    /* ── Tabs ── */
-    .tabs {
-      display: flex; gap: 0; border-bottom: 1px solid #e5e7eb;
-    }
-    .tab {
-      flex: 1; padding: 0.5rem 0.5rem;
-      border: none; border-bottom: 2px solid transparent;
-      background: none; font-size: 0.78rem; font-weight: 600;
-      color: #9ca3af; cursor: pointer;
-      transition: all 0.15s; margin-bottom: -1px;
-    }
-    .tab.active { color: #374151; border-bottom-color: #374151; }
-    .tab:hover:not(.active) { color: #6b7280; }
-
-    /* ── Form elements ── */
-    .field { display: flex; flex-direction: column; gap: 0.25rem; }
-    .field label {
-      font-size: 0.68rem; font-weight: 700;
-      color: #9ca3af; text-transform: uppercase; letter-spacing: 0.06em;
-    }
-    .field select, .field input {
-      width: 100%;
-      padding: 0.5rem 0.65rem;
-      border: 2px solid #e5e7eb;
-      border-radius: 10px;
-      font-size: 0.82rem;
-      color: #374151;
-      background: #f9fafb;
-      transition: border-color 0.15s, background 0.15s;
-      appearance: none;
-      cursor: pointer;
-    }
-    .field select:focus, .field input:focus {
-      outline: none; border-color: #6b7280; background: #fff;
+    /* ── Location list ── */
+    #loc-list {
+      display: flex; flex-direction: column; gap: 0.3rem;
     }
 
-    .pick-btn {
-      width: 100%;
-      padding: 0.4rem 0.7rem;
-      background: #f9fafb;
-      border: 1.5px dashed #d1d5db;
-      border-radius: 8px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: #6b7280;
-      cursor: crosshair;
-      transition: all 0.15s;
-      text-align: center;
+    .loc-row {
+      display: flex; align-items: center; gap: 0.4rem; min-height: 36px;
     }
-    .pick-btn:hover { border-color: #9ca3af; color: #374151; background: #f3f4f6; }
-    .pick-btn.active {
-      background: #f0fdf4;
-      border-color: #6ee7b7;
-      color: #059669;
+
+    .loc-arrows {
+      display: flex; flex-direction: column; width: 18px; flex-shrink: 0; gap: 0;
     }
+    .loc-arrows-spacer { width: 18px; flex-shrink: 0; }
+
+    .arr-up, .arr-down {
+      background: none; border: none; cursor: pointer;
+      color: #9ca3af; font-size: 0.58rem; padding: 1px 0; line-height: 1.2;
+      transition: color 0.15s;
+    }
+    .arr-up:hover:not(:disabled), .arr-down:hover:not(:disabled) { color: #374151; }
+    .arr-up:disabled, .arr-down:disabled { opacity: 0.25; cursor: not-allowed; }
+
+    .loc-dot {
+      width: 22px; height: 22px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.65rem; font-weight: 800; color: #fff;
+      flex-shrink: 0;
+    }
+    .loc-dot-empty { opacity: 0.35; }
+
+    .loc-name {
+      flex: 1; font-size: 0.81rem; font-weight: 600; color: #374151;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+
+    .loc-remove {
+      background: none; border: none; cursor: pointer;
+      padding: 3px 5px; color: #d1d5db; font-size: 0.75rem;
+      transition: color 0.15s; flex-shrink: 0; line-height: 1;
+    }
+    .loc-remove:hover { color: #ef4444; }
+
+    /* Search inside loc-row */
+    .loc-search-row .search-field { flex: 1; }
+    .search-field { position: relative; }
+    .search-field input {
+      width: 100%; padding: 0.45rem 0.6rem;
+      border: 1.5px solid #e5e7eb; border-radius: 8px;
+      font-size: 0.8rem; color: #374151; background: #f9fafb;
+      outline: none; transition: border-color 0.15s, background 0.15s;
+    }
+    .search-field input:focus { border-color: #9ca3af; background: #fff; }
+
+    .suggestions {
+      display: none; position: absolute; top: 100%; left: 0; right: 0;
+      margin-top: 3px; background: #fff; border: 1px solid #e5e7eb;
+      border-radius: 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+      overflow: hidden; max-height: 220px; overflow-y: auto; z-index: 300;
+    }
+    .suggestions.open { display: block; }
+    .sug-item {
+      display: block; width: 100%; text-align: left; padding: 0.38rem 0.65rem;
+      border: none; background: none; cursor: pointer;
+      border-bottom: 1px solid #f3f4f6; transition: background 0.1s;
+    }
+    .sug-item:last-child { border-bottom: none; }
+    .sug-item:hover { background: #f9fafb; }
+    .sug-item .sug-name { font-weight: 600; font-size: 0.77rem; }
+    .sug-item .sug-detail { font-size: 0.62rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #9ca3af; }
+    .sug-item.out-of-bounds { color: #ef4444; }
+    .sug-item.out-of-bounds .sug-detail { color: #fca5a5; }
+    .sug-label {
+      font-size: 0.58rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.05em; color: #9ca3af; padding: 0.3rem 0.65rem 0.12rem;
+    }
+
+    /* ── Action buttons ── */
+    #action-area { display: flex; flex-direction: column; gap: 0.4rem; }
 
     .btn {
-      width: 100%; padding: 0.6rem 1rem;
+      flex: 1; padding: 0.55rem 1rem;
       border: none; border-radius: 12px;
-      font-size: 0.85rem; font-weight: 800;
+      font-size: 0.82rem; font-weight: 800;
       cursor: pointer;
-      transition: transform 0.1s, opacity 0.15s;
+      transition: transform 0.1s, opacity 0.15s, background 0.15s;
     }
     .btn:active { transform: scale(0.97); }
-    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
     .btn-primary { background: #1a1a1a; color: #fff; }
     .btn-primary:hover:not(:disabled) { background: #374151; }
 
+    .btn-tsp { background: #f0fdf4; color: #15803d; border: 1.5px solid #bbf7d0; }
+    .btn-tsp:hover:not(:disabled) { background: #dcfce7; }
+
     .btn-ghost { background: #f3f4f6; color: #6b7280; }
     .btn-ghost:hover:not(:disabled) { background: #e5e7eb; }
 
-    .btn-row { display: flex; gap: 0.5rem; }
-    .btn-row .btn { flex: 1; }
+    .btn-row { display: flex; gap: 0.4rem; }
 
-    .result-card {
-      background: #f9fafb;
-      border: 1px solid #e5e7eb;
-      border-radius: 10px;
-      padding: 0.65rem 0.85rem;
-      display: none;
-    }
-    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
-    .stat { text-align: center; }
-    .stat-value { font-size: 1rem; font-weight: 700; color: #1a1a1a; }
-    .stat-label { font-size: 0.6rem; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 1px; }
-
-    .status { font-size: 0.73rem; color: #9ca3af; line-height: 1.5; min-height: 1.1em; text-align: center; }
-    .status.error { color: #ef4444; }
-    .status.success { color: #10b981; }
-
-    .stops-list {
-      display: flex; flex-wrap: wrap; gap: 0.3rem;
-      min-height: 1.8rem; align-content: flex-start;
-    }
-    .stop-chip {
-      display: inline-flex; align-items: center; gap: 0.25rem;
-      background: #f3f4f6; border: 1px solid #e5e7eb;
-      border-radius: 20px; padding: 0.2rem 0.5rem 0.2rem 0.45rem;
-      font-size: 0.71rem; font-weight: 600; color: #374151;
-      cursor: pointer; transition: all 0.1s;
-    }
-    .stop-chip:hover { background: #fee2e2; border-color: #fca5a5; color: #991b1b; }
-    .stop-chip .remove { font-size: 0.8rem; color: #9ca3af; }
-
-    .stops-hint { font-size: 0.72rem; color: #9ca3af; text-align: center; padding: 0.4rem 0; }
-
+    /* ── Progress ── */
     .progress { height: 3px; background: #e5e7eb; border-radius: 2px; overflow: hidden; display: none; }
     .progress.active { display: block; }
     .progress-fill { height: 100%; background: #374151; border-radius: 2px; transition: width 0.4s ease; }
 
+    /* ── Result card ── */
+    .result-card {
+      background: #f9fafb; border: 1px solid #e5e7eb;
+      border-radius: 10px; padding: 0.6rem 0.85rem; display: none;
+    }
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; }
+    .stat { text-align: center; }
+    .stat-value { font-size: 0.95rem; font-weight: 700; color: #1a1a1a; }
+    .stat-label { font-size: 0.58rem; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 1px; }
+
+    .status { font-size: 0.72rem; color: #9ca3af; line-height: 1.5; min-height: 1em; text-align: center; }
+    .status.error { color: #ef4444; }
+    .status.success { color: #10b981; }
+
+    /* ── Tooltip ── */
     .ol-tooltip {
       background: #1a1a1a; border-radius: 6px; padding: 4px 10px;
       font-size: 0.72rem; font-weight: 600; color: #fff;
@@ -233,6 +226,7 @@
     #basemap-switcher button.active { background: #1a1a1a; color: #fff; }
     #basemap-switcher button:not(.active):hover { background: #f3f4f6; color: #374151; }
 
+    /* ── OL overrides ── */
     .ol-zoom {
       position: absolute !important;
       top: auto !important; bottom: 1.5rem !important;
@@ -253,63 +247,6 @@
     .ol-attribution ul { font-size: 0.6rem; color: #9ca3af; background: rgba(255,255,255,0.8); border-radius: 4px 0 0 0; padding: 2px 6px; margin: 0; }
     .ol-attribution a { color: #9ca3af; }
     .ol-rotate { display: none; }
-
-    .mode-section { display: none; flex-direction: column; gap: 0.65rem; }
-    .mode-section.active { display: flex; }
-
-    /* ── Route input (Google Maps style) ── */
-    .route-input-wrap {
-      display: flex; gap: 0.5rem; align-items: stretch;
-    }
-    .route-dots {
-      display: flex; flex-direction: column; align-items: center;
-      padding: 0.65rem 0; gap: 0;
-    }
-    .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-    .dot-green { background: #22c55e; }
-    .dot-red { background: #ef4444; }
-    .dot-line { width: 2px; flex: 1; background: #d1d5db; min-height: 12px; }
-    .route-inputs { flex: 1; display: flex; flex-direction: column; gap: 0.35rem; }
-    .search-field { position: relative; }
-    .search-field input {
-      width: 100%; padding: 0.5rem 0.65rem;
-      border: 1.5px solid #e5e7eb; border-radius: 8px;
-      font-size: 0.8rem; color: #374151; background: #f9fafb;
-      outline: none; transition: border-color 0.15s;
-    }
-    .search-field input:focus { border-color: #6b7280; background: #fff; }
-    .search-field input.has-value { background: #fff; border-color: #d1d5db; font-weight: 600; }
-    .suggestions {
-      display: none; position: absolute; top: 100%; left: 0; right: 0;
-      margin-top: 3px; background: #fff; border: 1px solid #e5e7eb;
-      border-radius: 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-      overflow: hidden; max-height: 240px; overflow-y: auto; z-index: 300;
-    }
-    .suggestions.open { display: block; }
-    .sug-item {
-      display: block; width: 100%; text-align: left; padding: 0.4rem 0.7rem;
-      border: none; background: none; cursor: pointer;
-      border-bottom: 1px solid #f3f4f6; transition: background 0.1s;
-    }
-    .sug-item:last-child { border-bottom: none; }
-    .sug-item:hover { background: #f9fafb; }
-    .sug-item .sug-name { font-weight: 600; font-size: 0.78rem; }
-    .sug-item .sug-detail { font-size: 0.62rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .sug-item.out-of-bounds { color: #ef4444; }
-    .sug-item.out-of-bounds .sug-detail { color: #fca5a5; }
-    .sug-item.landmark { color: #374151; }
-    .sug-item.landmark .sug-detail { color: #9ca3af; }
-    .sug-label {
-      font-size: 0.58rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.05em; color: #9ca3af; padding: 0.35rem 0.7rem 0.15rem;
-    }
-    .swap-btn {
-      background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 8px;
-      width: 28px; cursor: pointer; font-size: 0.9rem; color: #6b7280;
-      display: flex; align-items: center; justify-content: center;
-      transition: background 0.15s; flex-shrink: 0;
-    }
-    .swap-btn:hover { background: #e5e7eb; }
   </style>
 </head>
 <body>
@@ -326,67 +263,18 @@
     </div>
 
     <div id="panel-body">
-      <!-- City switcher -->
       <div class="city-switcher" id="city-switcher"></div>
-
-      <!-- Tabs -->
-      <div class="tabs">
-        <button class="tab active" data-mode="route">Route</button>
-        <button class="tab" data-mode="tsp">TSP</button>
+      <div id="loc-list"></div>
+      <div id="action-area"></div>
+      <div class="progress" id="progress"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+      <div id="result-card" class="result-card">
+        <div class="stats-grid">
+          <div class="stat"><div class="stat-value" id="res-dist">—</div><div class="stat-label">Distance</div></div>
+          <div class="stat"><div class="stat-value" id="res-walk">—</div><div class="stat-label">Walk</div></div>
+          <div class="stat"><div class="stat-value" id="res-drive">—</div><div class="stat-label">Drive</div></div>
+        </div>
       </div>
-
-      <!-- Route mode -->
-      <div class="mode-section active" id="mode-route">
-        <div class="route-input-wrap">
-          <div class="route-dots">
-            <span class="dot dot-green"></span>
-            <span class="dot-line"></span>
-            <span class="dot dot-red"></span>
-          </div>
-          <div class="route-inputs">
-            <div class="search-field" id="from-field">
-              <input type="text" id="from-input" placeholder="Search start or click map" autocomplete="off" />
-              <div class="suggestions" id="from-suggestions"></div>
-            </div>
-            <div class="search-field" id="to-field">
-              <input type="text" id="to-input" placeholder="Search destination or click map" autocomplete="off" />
-              <div class="suggestions" id="to-suggestions"></div>
-            </div>
-          </div>
-          <button class="swap-btn" id="swap-btn" title="Swap">⇅</button>
-        </div>
-        <div class="btn-row">
-          <button class="btn btn-primary" id="go-btn" disabled>Find Route →</button>
-          <button class="btn btn-ghost" id="route-clear-btn">Clear</button>
-        </div>
-        <div class="progress" id="rt-progress"><div class="progress-fill" id="rt-progress-fill" style="width:0%"></div></div>
-        <div id="rt-result" class="result-card">
-          <div class="stats-grid">
-            <div class="stat"><div class="stat-value" id="rt-dist">—</div><div class="stat-label">Distance</div></div>
-            <div class="stat"><div class="stat-value" id="rt-walk">—</div><div class="stat-label">Walk</div></div>
-            <div class="stat"><div class="stat-value" id="rt-drive">—</div><div class="stat-label">Drive</div></div>
-          </div>
-        </div>
-        <div class="status" id="rt-status"></div>
-      </div>
-
-      <!-- TSP mode -->
-      <div class="mode-section" id="mode-tsp">
-        <div class="stops-hint" id="tsp-hint">Click anywhere on the map to add stops (max 8)</div>
-        <div class="stops-list" id="tsp-stops-list"></div>
-        <div class="btn-row">
-          <button class="btn btn-primary" id="tsp-find-btn" disabled>Solve TSP →</button>
-          <button class="btn btn-ghost" id="tsp-clear-btn">Clear</button>
-        </div>
-        <div class="progress" id="tsp-progress"><div class="progress-fill" id="tsp-progress-fill" style="width:0%"></div></div>
-        <div id="tsp-result" class="result-card">
-          <div class="stats-grid" style="grid-template-columns: 1fr 1fr;">
-            <div class="stat"><div class="stat-value" id="tsp-dist">—</div><div class="stat-label">Total dist</div></div>
-            <div class="stat"><div class="stat-value" id="tsp-stops-count">—</div><div class="stat-label">Stops</div></div>
-          </div>
-        </div>
-        <div class="status" id="tsp-status"></div>
-      </div>
+      <div class="status" id="status"></div>
     </div>
   </div>
 
@@ -404,13 +292,13 @@
         <button id="about-close" style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:#9ca3af;padding:4px;">✕</button>
       </div>
       <div style="font-size:0.78rem;color:#4b5563;line-height:1.65;">
-        <p style="margin:0 0 0.7rem;">Find shortest road routes between landmarks, or solve the <strong>Travelling Salesman Problem</strong> (TSP) for up to 8 stops.</p>
+        <p style="margin:0 0 0.7rem;">Add up to 8 locations and find the shortest road route, or let the <strong>Held-Karp TSP solver</strong> find the optimal visit order.</p>
         <p style="margin:0 0 0.7rem;font-size:0.7rem;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.05em;">How it works</p>
         <p style="margin:0 0 0.7rem;">Routes follow real roads using <a href="https://pgrouting.org/" target="_blank" style="color:#2563eb;">pgRouting</a> — shortest paths on an OpenStreetMap road network.</p>
         <p style="margin:0 0 0.7rem;font-size:0.7rem;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.05em;">Stack</p>
         <p style="margin:0 0 0.7rem;">OSM → <code style="background:#f3f4f6;padding:1px 4px;border-radius:3px;font-size:0.72rem;">osm2pgrouting</code> → PostgreSQL + pgRouting on <a href="https://supabase.com/" target="_blank" style="color:#2563eb;">Supabase</a> · Dijkstra routing via RPC · Held-Karp TSP (client-side) · <a href="https://openlayers.org/" target="_blank" style="color:#2563eb;">OpenLayers</a></p>
         <p style="margin:0 0 0.7rem;font-size:0.7rem;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.05em;">Cities</p>
-        <p style="margin:0 0 0.7rem;">🏛️ Yogyakarta (20 landmarks) · 🏰 München (25 landmarks)<br>You can also click anywhere on the map.</p>
+        <p style="margin:0 0 0.7rem;">🏛️ Yogyakarta (20 landmarks) · 🏰 München (25 landmarks)<br>Search with Photon geocoding or click anywhere on the map.</p>
         <p style="margin:0;text-align:center;"><a href="https://github.com/ismailsunni/map" target="_blank" style="color:#2563eb;font-size:0.72rem;">github.com/ismailsunni/map</a></p>
       </div>
     </div>
