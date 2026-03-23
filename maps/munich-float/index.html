@@ -16,6 +16,7 @@
       box-shadow: 0 1px 4px rgba(0,0,0,0.12);
       border: 1px solid #e5e7eb;
       transition: background 0.15s;
+      white-space: nowrap;
     }
     .back-btn:hover { background: #f3f4f6; }
   </style>
@@ -238,24 +239,36 @@
     }
 
     /* ── OL overrides ── */
-    .ol-zoom { bottom: auto; top: 1rem; right: 1rem; left: auto; }
+    /* Move zoom to bottom-right, away from back button */
+    .ol-zoom {
+      position: absolute !important;
+      top: auto !important; bottom: 1.5rem !important;
+      left: auto !important; right: 1rem !important;
+      background: none !important;
+      padding: 0 !important;
+    }
     .ol-zoom .ol-zoom-in, .ol-zoom .ol-zoom-out {
+      display: block;
       background: #fff !important;
       color: #374151 !important;
-      border-radius: 8px !important;
+      border-radius: 6px !important;
       border: 1px solid #e5e7eb !important;
       width: 2rem !important; height: 2rem !important;
-      line-height: 1.8rem !important;
-      font-size: 1rem !important;
-      margin: 2px !important;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.08) !important;
+      line-height: 1.9rem !important;
+      font-size: 1.1rem !important;
+      font-weight: 400 !important;
+      margin: 2px 0 !important;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1) !important;
+      cursor: pointer !important;
     }
     .ol-zoom .ol-zoom-in:hover, .ol-zoom .ol-zoom-out:hover {
       background: #f3f4f6 !important;
     }
+    .ol-attribution { bottom: 0 !important; right: 0 !important; }
     .ol-attribution button { display: none; }
-    .ol-attribution ul { font-size: 0.6rem; color: #9ca3af; background: rgba(255,255,255,0.8); border-radius: 6px; padding: 2px 6px; }
+    .ol-attribution ul { font-size: 0.6rem; color: #9ca3af; background: rgba(255,255,255,0.8); border-radius: 4px 0 0 0; padding: 2px 6px; margin: 0; }
     .ol-attribution a { color: #9ca3af; }
+    .ol-rotate { display: none; }
 
     /* ── Mode sections ── */
     .mode-section { display: none; flex-direction: column; gap: 0.65rem; }
