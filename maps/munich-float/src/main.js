@@ -33,7 +33,10 @@ async function rpc(name, params = {}) {
 }
 
 // ── Helpers ───────────────────────────────────────────────────
-function fmtDist(m) { return m >= 1000 ? `${(m / 1000).toFixed(1)}km` : `${Math.round(m)}m` }
+function fmtDist(m) {
+  if (!m || m >= 1e14) return '—'
+  return m >= 1000 ? `${(m / 1000).toFixed(1)} km` : `${Math.round(m)} m`
+}
 function fmtWalk(m) { const t = Math.round(m / 83); return t < 60 ? `${t}m` : `${Math.floor(t / 60)}h${t % 60}m` }
 function fmtDrive(m) { const t = Math.round(m / 417); return t < 1 ? '<1m' : `${t}m` }
 function parseGeo(raw) { return typeof raw === 'string' ? JSON.parse(raw) : raw }
@@ -470,13 +473,24 @@ async function runTSP() {
     setProgress('tsp', 40)
 
     const n = vids.length
+    const INF_DIST = 1e15
     const idxMap = new Map(vids.map((id, i) => [String(id), i]))
-    const matrix = Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => i === j ? 0 : Infinity))
+    // Init with large finite value (not Infinity — keeps TSP solver arithmetic sane)
+    const matrix = Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => i === j ? 0 : INF_DIST))
     distances.forEach(d => {
       const i = idxMap.get(String(d.from_vertex))
       const j = idxMap.get(String(d.to_vertex))
-      if (i !== undefined && j !== undefined) matrix[i][j] = d.cost_m
+      if (i !== undefined && j !== undefined && d.cost_m > 0) {
+        matrix[i][j] = d.cost_m
+        // Roads are bidirectional — use the same cost if reverse not present
+        if (matrix[j][i] === INF_DIST) matrix[j][i] = d.cost_m
+      }
     })
+    // Warn if any pair is still missing (helps debug)
+    for (let i = 0; i < n; i++)
+      for (let j = 0; j < n; j++)
+        if (i !== j && matrix[i][j] === INF_DIST)
+          console.warn(`Missing distance: ${vids[i]} → ${vids[j]}`)
 
     setStatus('tsp-status', 'Solving TSP…')
     setProgress('tsp', 55)
