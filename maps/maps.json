@@ -1,5 +1,14 @@
 [
   {
+    "id": "yogya-float",
+    "title": "Yogyakarta Route",
+    "description": "Find routes and solve TSP across Yogyakarta landmarks. Floating collapsible panel, real road distances via pgRouting + Supabase.",
+    "library": "OpenLayers",
+    "libraryColor": "#4a90d9",
+    "thumbnail": "thumb.png",
+    "tags": ["routing", "pgrouting", "supabase", "yogyakarta", "indonesia", "tsp", "vite"]
+  },
+  {
     "id": "munich-float",
     "title": "München Route · Float",
     "description": "Find routes and solve TSP across Munich landmarks. Floating collapsible panel, fun colourful style, real road distances via pgRouting + Supabase.",
