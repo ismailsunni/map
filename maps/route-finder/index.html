@@ -3,29 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>München Route · Map Collection</title>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏰</text></svg>" />
+  <title>Route Finder · Map Collection</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗺️</text></svg>" />
   <style>
-    /* ── Basemap switcher ── */
-    #basemap-switcher {
+    /* back button */
+    .back-btn {
       position: fixed; top: 1rem; left: 1rem; z-index: 200;
-      display: flex; gap: 2px;
-      background: #fff;
+      background: #fff; color: #374151;
+      padding: 0.35rem 0.75rem; border-radius: 6px;
+      font-size: 0.75rem; font-weight: 600;
+      text-decoration: none;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.12);
       border: 1px solid #e5e7eb;
-      border-radius: 7px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-      overflow: hidden;
-    }
-    #basemap-switcher button {
-      padding: 0.3rem 0.6rem;
-      border: none; background: none;
-      font-size: 0.7rem; font-weight: 600;
-      color: #9ca3af; cursor: pointer;
-      transition: all 0.15s;
+      transition: background 0.15s;
       white-space: nowrap;
     }
-    #basemap-switcher button.active { background: #1a1a1a; color: #fff; }
-    #basemap-switcher button:not(.active):hover { background: #f3f4f6; color: #374151; }
+    .back-btn:hover { background: #f3f4f6; }
   </style>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
@@ -48,7 +41,6 @@
     }
     #panel.minimized #panel-body { display: none; }
 
-    /* ── Panel handle / header ── */
     #panel-header {
       display: flex;
       align-items: center;
@@ -85,7 +77,6 @@
     }
     #minimize-btn:hover { background: #e5e7eb; }
 
-    /* ── Panel body ── */
     #panel-body {
       padding: 1rem 1.1rem 1.1rem;
       display: flex;
@@ -93,29 +84,32 @@
       gap: 0.75rem;
     }
 
+    /* ── City switcher ── */
+    .city-switcher {
+      display: flex; gap: 0; border-bottom: 1px solid #e5e7eb;
+    }
+    .city-btn {
+      flex: 1; padding: 0.45rem 0.5rem;
+      border: none; border-bottom: 2px solid transparent;
+      background: none; font-size: 0.78rem; font-weight: 600;
+      color: #9ca3af; cursor: pointer;
+      transition: all 0.15s; margin-bottom: -1px;
+    }
+    .city-btn.active { color: #374151; border-bottom-color: #374151; }
+    .city-btn:hover:not(.active) { color: #6b7280; }
+
     /* ── Tabs ── */
     .tabs {
-      display: flex;
-      gap: 0;
-      border-bottom: 1px solid #e5e7eb;
+      display: flex; gap: 0; border-bottom: 1px solid #e5e7eb;
     }
     .tab {
-      flex: 1;
-      padding: 0.5rem 0.5rem;
-      border: none;
-      border-bottom: 2px solid transparent;
-      background: none;
-      font-size: 0.78rem;
-      font-weight: 600;
-      color: #9ca3af;
-      cursor: pointer;
-      transition: all 0.15s;
-      margin-bottom: -1px;
+      flex: 1; padding: 0.5rem 0.5rem;
+      border: none; border-bottom: 2px solid transparent;
+      background: none; font-size: 0.78rem; font-weight: 600;
+      color: #9ca3af; cursor: pointer;
+      transition: all 0.15s; margin-bottom: -1px;
     }
-    .tab.active {
-      color: #374151;
-      border-bottom-color: #374151;
-    }
+    .tab.active { color: #374151; border-bottom-color: #374151; }
     .tab:hover:not(.active) { color: #6b7280; }
 
     /* ── Form elements ── */
@@ -137,7 +131,7 @@
       cursor: pointer;
     }
     .field select:focus, .field input:focus {
-      outline: none; border-color: #feca57; background: #fff;
+      outline: none; border-color: #6b7280; background: #fff;
     }
 
     .pick-btn {
@@ -160,7 +154,6 @@
       color: #059669;
     }
 
-    /* ── Buttons ── */
     .btn {
       width: 100%; padding: 0.6rem 1rem;
       border: none; border-radius: 12px;
@@ -171,22 +164,15 @@
     .btn:active { transform: scale(0.97); }
     .btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
-    .btn-primary {
-      background: #1a1a1a;
-      color: #fff;
-    }
+    .btn-primary { background: #1a1a1a; color: #fff; }
     .btn-primary:hover:not(:disabled) { background: #374151; }
 
-    .btn-ghost {
-      background: #f3f4f6;
-      color: #6b7280;
-    }
+    .btn-ghost { background: #f3f4f6; color: #6b7280; }
     .btn-ghost:hover:not(:disabled) { background: #e5e7eb; }
 
     .btn-row { display: flex; gap: 0.5rem; }
     .btn-row .btn { flex: 1; }
 
-    /* ── Result card ── */
     .result-card {
       background: #f9fafb;
       border: 1px solid #e5e7eb;
@@ -199,15 +185,10 @@
     .stat-value { font-size: 1rem; font-weight: 700; color: #1a1a1a; }
     .stat-label { font-size: 0.6rem; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 1px; }
 
-    /* ── Status ── */
-    .status {
-      font-size: 0.73rem; color: #9ca3af; line-height: 1.5;
-      min-height: 1.1em; text-align: center;
-    }
+    .status { font-size: 0.73rem; color: #9ca3af; line-height: 1.5; min-height: 1.1em; text-align: center; }
     .status.error { color: #ef4444; }
     .status.success { color: #10b981; }
 
-    /* ── TSP stops list ── */
     .stops-list {
       display: flex; flex-wrap: wrap; gap: 0.3rem;
       min-height: 1.8rem; align-content: flex-start;
@@ -222,70 +203,57 @@
     .stop-chip:hover { background: #fee2e2; border-color: #fca5a5; color: #991b1b; }
     .stop-chip .remove { font-size: 0.8rem; color: #9ca3af; }
 
-    .stops-hint {
-      font-size: 0.72rem; color: #9ca3af; text-align: center;
-      padding: 0.4rem 0;
-    }
+    .stops-hint { font-size: 0.72rem; color: #9ca3af; text-align: center; padding: 0.4rem 0; }
 
-    /* ── Progress bar ── */
-    .progress {
-      height: 3px; background: #e5e7eb; border-radius: 2px; overflow: hidden; display: none;
-    }
+    .progress { height: 3px; background: #e5e7eb; border-radius: 2px; overflow: hidden; display: none; }
     .progress.active { display: block; }
-    .progress-fill {
-      height: 100%;
-      background: #374151;
-      border-radius: 2px;
-      transition: width 0.4s ease;
-    }
+    .progress-fill { height: 100%; background: #374151; border-radius: 2px; transition: width 0.4s ease; }
 
-    /* ── Tooltip ── */
     .ol-tooltip {
-      background: #1a1a1a;
-      border-radius: 6px;
-      padding: 4px 10px;
-      font-size: 0.72rem;
-      font-weight: 600;
-      color: #fff;
-      white-space: nowrap;
-      pointer-events: none;
+      background: #1a1a1a; border-radius: 6px; padding: 4px 10px;
+      font-size: 0.72rem; font-weight: 600; color: #fff;
+      white-space: nowrap; pointer-events: none;
       box-shadow: 0 2px 8px rgba(0,0,0,0.2);
       transform: translate(-50%, -140%);
     }
 
-    /* ── OL overrides ── */
-    /* Move zoom to bottom-right, away from back button */
+    /* ── Basemap switcher ── */
+    #basemap-switcher {
+      position: fixed; top: 1rem; left: 1rem; z-index: 200;
+      display: flex; gap: 2px;
+      background: #fff; border: 1px solid #e5e7eb;
+      border-radius: 7px; box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    #basemap-switcher button {
+      padding: 0.3rem 0.6rem; border: none; background: none;
+      font-size: 0.7rem; font-weight: 600; color: #9ca3af;
+      cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    }
+    #basemap-switcher button.active { background: #1a1a1a; color: #fff; }
+    #basemap-switcher button:not(.active):hover { background: #f3f4f6; color: #374151; }
+
     .ol-zoom {
       position: absolute !important;
       top: auto !important; bottom: 1.5rem !important;
       left: auto !important; right: 1rem !important;
-      background: none !important;
-      padding: 0 !important;
+      background: none !important; padding: 0 !important;
     }
     .ol-zoom .ol-zoom-in, .ol-zoom .ol-zoom-out {
-      display: block;
-      background: #fff !important;
-      color: #374151 !important;
-      border-radius: 6px !important;
-      border: 1px solid #e5e7eb !important;
+      display: block; background: #fff !important; color: #374151 !important;
+      border-radius: 6px !important; border: 1px solid #e5e7eb !important;
       width: 2rem !important; height: 2rem !important;
-      line-height: 1.9rem !important;
-      font-size: 1.1rem !important;
-      font-weight: 400 !important;
-      margin: 2px 0 !important;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.1) !important;
-      cursor: pointer !important;
+      line-height: 1.9rem !important; font-size: 1.1rem !important;
+      font-weight: 400 !important; margin: 2px 0 !important;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1) !important; cursor: pointer !important;
     }
-    .ol-zoom .ol-zoom-in:hover, .ol-zoom .ol-zoom-out:hover {
-      background: #f3f4f6 !important;
-    }
+    .ol-zoom .ol-zoom-in:hover, .ol-zoom .ol-zoom-out:hover { background: #f3f4f6 !important; }
     .ol-attribution { bottom: 0 !important; right: 0 !important; }
     .ol-attribution button { display: none; }
     .ol-attribution ul { font-size: 0.6rem; color: #9ca3af; background: rgba(255,255,255,0.8); border-radius: 4px 0 0 0; padding: 2px 6px; margin: 0; }
     .ol-attribution a { color: #9ca3af; }
     .ol-rotate { display: none; }
 
-    /* ── Mode sections ── */
     .mode-section { display: none; flex-direction: column; gap: 0.65rem; }
     .mode-section.active { display: flex; }
   </style>
@@ -293,18 +261,20 @@
 <body>
   <div id="map"></div>
 
-  <!-- Floating panel -->
   <div id="panel">
     <div id="panel-header">
       <a href="../index.html" id="back-link" title="Back to gallery">←</a>
       <div style="flex:1">
-        <div class="panel-title">München Route</div>
+        <div class="panel-title" id="city-title">Route Finder</div>
         <div class="panel-subtitle">Real road routes · pgRouting</div>
       </div>
       <button id="minimize-btn" title="Minimize">–</button>
     </div>
 
     <div id="panel-body">
+      <!-- City switcher -->
+      <div class="city-switcher" id="city-switcher"></div>
+
       <!-- Tabs -->
       <div class="tabs">
         <button class="tab active" data-mode="route">Route</button>
@@ -360,7 +330,6 @@
 
   <div id="tooltip" class="ol-tooltip" style="display:none"></div>
 
-  <!-- Basemap switcher -->
   <div id="basemap-switcher">
     <button data-basemap="positron" class="active">Light</button>
     <button data-basemap="osm">OSM</button>

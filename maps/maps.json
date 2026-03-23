@@ -1,21 +1,12 @@
 [
   {
-    "id": "yogyakarta",
-    "title": "Yogyakarta Route",
-    "description": "Find routes and solve TSP across Yogyakarta landmarks. Real road distances via pgRouting + Supabase.",
+    "id": "route-finder",
+    "title": "Route Finder",
+    "description": "Find routes and solve TSP across city landmarks. Switch between Yogyakarta and München. Real road distances via pgRouting + Supabase.",
     "library": "OpenLayers",
-    "libraryColor": "#4a90d9",
+    "libraryColor": "#2563eb",
     "thumbnail": "thumb.png",
-    "tags": ["routing", "pgrouting", "supabase", "yogyakarta", "indonesia", "tsp"]
-  },
-  {
-    "id": "muenchen",
-    "title": "München Route",
-    "description": "Find routes and solve TSP across Munich landmarks. Real road distances via pgRouting + Supabase.",
-    "library": "OpenLayers",
-    "libraryColor": "#4a90d9",
-    "thumbnail": "thumb.png",
-    "tags": ["routing", "pgrouting", "supabase", "munich", "germany", "tsp"]
+    "tags": ["routing", "pgrouting", "supabase", "tsp", "yogyakarta", "munich"]
   },
   {
     "id": "daylight-duration",
