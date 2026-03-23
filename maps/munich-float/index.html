@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>München Route · Map Collection</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏰</text></svg>" />
+  <style>
+    /* back button (inlined from gallery.css so it works post-build from dist/) */
+    .back-btn {
+      position: fixed; top: 1rem; left: 1rem; z-index: 200;
+      background: #fff; color: #374151;
+      padding: 0.4rem 0.8rem; border-radius: 20px;
+      font-size: 0.78rem; font-weight: 700;
+      text-decoration: none;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+      transition: background 0.15s, color 0.15s;
+    }
+    .back-btn:hover { background: #fef3c7; color: #d97706; }
+  </style>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+    #map { width: 100%; height: 100%; }
+
+    /* ── Floating panel ── */
+    #panel {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 100;
+      width: min(460px, calc(100vw - 2rem));
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.08);
+      overflow: hidden;
+      transition: box-shadow 0.2s;
+    }
+    #panel.minimized #panel-body { display: none; }
+
+    /* ── Panel handle / header ── */
+    #panel-header {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.75rem 1rem 0.75rem 1.1rem;
+      cursor: pointer;
+      user-select: none;
+      background: linear-gradient(135deg, #ff6b6b 0%, #feca57 50%, #48dbfb 100%);
+      color: #fff;
+    }
+    #panel-header:hover { filter: brightness(1.05); }
+
+    .panel-title { font-size: 0.95rem; font-weight: 800; flex: 1; letter-spacing: -0.01em; }
+    .panel-subtitle { font-size: 0.65rem; font-weight: 600; opacity: 0.8; }
+
+    #minimize-btn {
+      background: rgba(255,255,255,0.25);
+      border: none;
+      border-radius: 50%;
+      width: 28px; height: 28px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 0.9rem; color: #fff;
+      transition: background 0.15s;
+      flex-shrink: 0;
+    }
+    #minimize-btn:hover { background: rgba(255,255,255,0.4); }
+
+    /* ── Panel body ── */
+    #panel-body {
+      padding: 1rem 1.1rem 1.1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex;
+      gap: 0.4rem;
+      background: #f3f4f6;
+      border-radius: 12px;
+      padding: 4px;
+    }
+    .tab {
+      flex: 1;
+      padding: 0.45rem 0.5rem;
+      border: none;
+      background: none;
+      border-radius: 9px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #9ca3af;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .tab.active {
+      background: #fff;
+      color: #374151;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+
+    /* ── Form elements ── */
+    .field { display: flex; flex-direction: column; gap: 0.25rem; }
+    .field label {
+      font-size: 0.68rem; font-weight: 700;
+      color: #9ca3af; text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .field select, .field input {
+      width: 100%;
+      padding: 0.5rem 0.65rem;
+      border: 2px solid #e5e7eb;
+      border-radius: 10px;
+      font-size: 0.82rem;
+      color: #374151;
+      background: #f9fafb;
+      transition: border-color 0.15s, background 0.15s;
+      appearance: none;
+      cursor: pointer;
+    }
+    .field select:focus, .field input:focus {
+      outline: none; border-color: #feca57; background: #fff;
+    }
+
+    .pick-btn {
+      width: 100%;
+      padding: 0.45rem 0.7rem;
+      background: #fffbeb;
+      border: 2px dashed #fbbf24;
+      border-radius: 10px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #d97706;
+      cursor: crosshair;
+      transition: all 0.15s;
+      text-align: center;
+    }
+    .pick-btn.active {
+      background: #fef3c7;
+      border-color: #f59e0b;
+      box-shadow: 0 0 0 3px rgba(251,191,36,0.25);
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      width: 100%; padding: 0.6rem 1rem;
+      border: none; border-radius: 12px;
+      font-size: 0.85rem; font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.1s, opacity 0.15s;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(255,107,107,0.3);
+    }
+    .btn-primary:hover:not(:disabled) { opacity: 0.9; }
+
+    .btn-ghost {
+      background: #f3f4f6;
+      color: #6b7280;
+    }
+    .btn-ghost:hover:not(:disabled) { background: #e5e7eb; }
+
+    .btn-row { display: flex; gap: 0.5rem; }
+    .btn-row .btn { flex: 1; }
+
+    /* ── Result card ── */
+    .result-card {
+      background: linear-gradient(135deg, #f0fdf4 0%, #eff6ff 100%);
+      border: 2px solid #d1fae5;
+      border-radius: 14px;
+      padding: 0.75rem 0.9rem;
+      display: none;
+    }
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+    .stat { text-align: center; }
+    .stat-value { font-size: 1.1rem; font-weight: 800; color: #059669; }
+    .stat-label { font-size: 0.62rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 1px; }
+
+    /* ── Status ── */
+    .status {
+      font-size: 0.73rem; color: #9ca3af; line-height: 1.5;
+      min-height: 1.1em; text-align: center;
+    }
+    .status.error { color: #ef4444; }
+    .status.success { color: #10b981; }
+
+    /* ── TSP stops list ── */
+    .stops-list {
+      display: flex; flex-wrap: wrap; gap: 0.35rem;
+      min-height: 1.8rem; align-content: flex-start;
+    }
+    .stop-chip {
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      background: #fef3c7; border: 2px solid #fbbf24;
+      border-radius: 20px; padding: 0.2rem 0.5rem 0.2rem 0.4rem;
+      font-size: 0.72rem; font-weight: 700; color: #92400e;
+      cursor: pointer; transition: all 0.1s;
+    }
+    .stop-chip:hover { background: #fde68a; border-color: #f59e0b; }
+    .stop-chip .remove { font-size: 0.8rem; color: #b45309; }
+
+    .stops-hint {
+      font-size: 0.72rem; color: #9ca3af; text-align: center;
+      padding: 0.4rem 0;
+    }
+
+    /* ── Progress bar ── */
+    .progress {
+      height: 4px; background: #e5e7eb; border-radius: 2px; overflow: hidden; display: none;
+    }
+    .progress.active { display: block; }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb);
+      border-radius: 2px;
+      transition: width 0.4s ease;
+    }
+
+    /* ── Tooltip ── */
+    .ol-tooltip {
+      background: #fff;
+      border: 2px solid #fbbf24;
+      border-radius: 10px;
+      padding: 4px 10px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #374151;
+      white-space: nowrap;
+      pointer-events: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      transform: translate(-50%, -140%);
+    }
+
+    /* ── OL overrides ── */
+    .ol-zoom { bottom: auto; top: 1rem; right: 1rem; left: auto; }
+    .ol-zoom .ol-zoom-in, .ol-zoom .ol-zoom-out {
+      background: #fff !important;
+      color: #374151 !important;
+      border-radius: 10px !important;
+      border: 2px solid #e5e7eb !important;
+      width: 2rem !important; height: 2rem !important;
+      line-height: 1.7rem !important;
+      font-size: 1.1rem !important;
+      margin: 2px !important;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+    }
+    .ol-zoom .ol-zoom-in:hover, .ol-zoom .ol-zoom-out:hover {
+      background: #fef3c7 !important; border-color: #fbbf24 !important;
+    }
+    .ol-attribution button { display: none; }
+    .ol-attribution ul { font-size: 0.6rem; color: #9ca3af; background: rgba(255,255,255,0.8); border-radius: 6px; padding: 2px 6px; }
+    .ol-attribution a { color: #9ca3af; }
+
+    /* ── Mode sections ── */
+    .mode-section { display: none; flex-direction: column; gap: 0.65rem; }
+    .mode-section.active { display: flex; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <!-- Floating panel -->
+  <div id="panel">
+    <div id="panel-header">
+      <div>
+        <div class="panel-title">🏰 München Route</div>
+        <div class="panel-subtitle">Real road routes · pgRouting · Supabase</div>
+      </div>
+      <button id="minimize-btn" title="Minimize">▼</button>
+    </div>
+
+    <div id="panel-body">
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab active" data-mode="route">🗺️ Route</button>
+        <button class="tab" data-mode="tsp">🧩 TSP</button>
+      </div>
+
+      <!-- Route mode -->
+      <div class="mode-section active" id="mode-route">
+        <div class="field">
+          <label>From</label>
+          <select id="from-select"><option value="">— choose or click map —</option></select>
+        </div>
+        <button class="pick-btn" id="from-pick-btn">📍 Click map to set start</button>
+        <div class="field">
+          <label>To</label>
+          <select id="to-select"><option value="">— choose or click map —</option></select>
+        </div>
+        <button class="pick-btn" id="to-pick-btn">📍 Click map to set end</button>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="go-btn" disabled>Find Route →</button>
+          <button class="btn btn-ghost" id="route-clear-btn">Clear</button>
+        </div>
+        <div class="progress" id="rt-progress"><div class="progress-fill" id="rt-progress-fill" style="width:0%"></div></div>
+        <div id="rt-result" class="result-card">
+          <div class="stats-grid">
+            <div class="stat"><div class="stat-value" id="rt-dist">—</div><div class="stat-label">Distance</div></div>
+            <div class="stat"><div class="stat-value" id="rt-walk">—</div><div class="stat-label">Walk</div></div>
+            <div class="stat"><div class="stat-value" id="rt-drive">—</div><div class="stat-label">Drive</div></div>
+          </div>
+        </div>
+        <div class="status" id="rt-status"></div>
+      </div>
+
+      <!-- TSP mode -->
+      <div class="mode-section" id="mode-tsp">
+        <div class="stops-hint" id="tsp-hint">Click on the map to add stops (max 8)</div>
+        <div class="stops-list" id="tsp-stops-list"></div>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="tsp-find-btn" disabled>Solve TSP →</button>
+          <button class="btn btn-ghost" id="tsp-clear-btn">Clear</button>
+        </div>
+        <div class="progress" id="tsp-progress"><div class="progress-fill" id="tsp-progress-fill" style="width:0%"></div></div>
+        <div id="tsp-result" class="result-card">
+          <div class="stats-grid" style="grid-template-columns: 1fr 1fr;">
+            <div class="stat"><div class="stat-value" id="tsp-dist">—</div><div class="stat-label">Total dist</div></div>
+            <div class="stat"><div class="stat-value" id="tsp-stops-count">—</div><div class="stat-label">Stops</div></div>
+          </div>
+        </div>
+        <div class="status" id="tsp-status"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tooltip" class="ol-tooltip" style="display:none"></div>
+  <a class="back-btn" href="../../../index.html">← Gallery</a>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
