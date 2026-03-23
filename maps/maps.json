@@ -1,39 +1,81 @@
 [
   {
+    "id": "yogyakarta-route",
+    "title": "Yogyakarta Route Finder",
+    "description": "Find routes between 20 Yogyakarta landmarks \u2014 Malioboro, Kraton, Tugu Station and more. Real road distances via pgRouting on Supabase.",
+    "library": "OpenLayers",
+    "libraryColor": "#4a90d9",
+    "thumbnail": "thumb.png",
+    "tags": [
+      "routing",
+      "pgrouting",
+      "supabase",
+      "yogyakarta",
+      "indonesia",
+      "tsp"
+    ]
+  },
+  {
     "id": "munich-float",
-    "title": "München Route · Float",
+    "title": "M\u00fcnchen Route \u00b7 Float",
     "description": "Find routes and solve TSP across Munich landmarks. Floating collapsible panel, fun colourful style, real road distances via pgRouting + Supabase.",
     "library": "OpenLayers",
     "libraryColor": "#ff6b6b",
     "thumbnail": "thumb.png",
-    "tags": ["routing", "pgrouting", "supabase", "munich", "germany", "tsp", "vite"]
+    "tags": [
+      "routing",
+      "pgrouting",
+      "supabase",
+      "munich",
+      "germany",
+      "tsp",
+      "vite"
+    ]
   },
   {
     "id": "munich-route",
-    "title": "München Route Finder",
+    "title": "M\u00fcnchen Route Finder",
     "description": "Find routes between 25 Munich landmarks, click any two points, or solve TSP for up to 8 stops. Real road distances via pgRouting.",
     "library": "OpenLayers",
     "libraryColor": "#4a90d9",
     "thumbnail": "thumb.png",
-    "tags": ["routing", "pgrouting", "supabase", "munich", "germany", "tsp"]
+    "tags": [
+      "routing",
+      "pgrouting",
+      "supabase",
+      "munich",
+      "germany",
+      "tsp"
+    ]
   },
   {
     "id": "ljubljana-route",
     "title": "Ljubljana Route Finder",
-    "description": "Find the real road route between 25 Ljubljana landmarks. Powered by pgRouting on Supabase — actual street distances, walk and drive time estimates.",
+    "description": "Find the real road route between 25 Ljubljana landmarks. Powered by pgRouting on Supabase \u2014 actual street distances, walk and drive time estimates.",
     "library": "OpenLayers",
     "libraryColor": "#4a90d9",
     "thumbnail": "thumb.png",
-    "tags": ["routing", "pgrouting", "supabase", "ljubljana", "slovenia"]
+    "tags": [
+      "routing",
+      "pgrouting",
+      "supabase",
+      "ljubljana",
+      "slovenia"
+    ]
   },
   {
     "id": "daylight-duration",
     "title": "Daylight Duration",
-    "description": "How many hours of daylight — or fasting — does each latitude get? Switch between Daylight and Fasting mode (6 Islamic methods + custom), animate through the year, and see polar effects.",
+    "description": "How many hours of daylight \u2014 or fasting \u2014 does each latitude get? Switch between Daylight and Fasting mode (6 Islamic methods + custom), animate through the year, and see polar effects.",
     "library": "OpenLayers",
     "libraryColor": "#4a90d9",
     "thumbnail": "thumb.png",
-    "tags": ["solar", "animation", "raster", "latitude"]
+    "tags": [
+      "solar",
+      "animation",
+      "raster",
+      "latitude"
+    ]
   },
   {
     "id": "ol-world",
@@ -42,7 +84,11 @@
     "library": "OpenLayers",
     "libraryColor": "#4a90d9",
     "thumbnail": "thumb.png",
-    "tags": ["osm", "raster", "tiles"]
+    "tags": [
+      "osm",
+      "raster",
+      "tiles"
+    ]
   },
   {
     "id": "maplibre-city",
@@ -51,7 +97,11 @@
     "library": "MapLibre",
     "libraryColor": "#47b881",
     "thumbnail": "thumb.png",
-    "tags": ["vector", "tiles", "gl"]
+    "tags": [
+      "vector",
+      "tiles",
+      "gl"
+    ]
   },
   {
     "id": "cesium-globe",
@@ -60,6 +110,10 @@
     "library": "Cesium",
     "libraryColor": "#e67e22",
     "thumbnail": "thumb.png",
-    "tags": ["3d", "globe", "terrain"]
+    "tags": [
+      "3d",
+      "globe",
+      "terrain"
+    ]
   }
 ]
