@@ -473,38 +473,41 @@ async function runTSP() {
     setProgress('tsp', 40)
 
     const n = vids.length
-    const INF_DIST = 1e15
     const idxMap = new Map(vids.map((id, i) => [String(id), i]))
-    // Init with large finite value (not Infinity — keeps TSP solver arithmetic sane)
-    const matrix = Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => i === j ? 0 : INF_DIST))
+    // Use Infinity — matches the solver's INF=1e18 comparisons correctly
+    const matrix = Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => i === j ? 0 : Infinity))
     distances.forEach(d => {
       const i = idxMap.get(String(d.from_vertex))
       const j = idxMap.get(String(d.to_vertex))
       if (i !== undefined && j !== undefined && d.cost_m > 0) {
         matrix[i][j] = d.cost_m
-        // Roads are bidirectional — use the same cost if reverse not present
-        if (matrix[j][i] === INF_DIST) matrix[j][i] = d.cost_m
+        if (!isFinite(matrix[j][i])) matrix[j][i] = d.cost_m  // fill reverse if missing
       }
     })
-    // Warn if any pair is still missing (helps debug)
+    // Check all pairs are populated
+    const missing = []
     for (let i = 0; i < n; i++)
       for (let j = 0; j < n; j++)
-        if (i !== j && matrix[i][j] === INF_DIST)
-          console.warn(`Missing distance: ${vids[i]} → ${vids[j]}`)
+        if (i !== j && !isFinite(matrix[i][j])) missing.push(`${vids[i]}→${vids[j]}`)
+    if (missing.length) {
+      throw new Error(`Missing road distances for ${missing.length} pairs. Try stops closer together.`)
+    }
 
     setStatus('tsp-status', 'Solving TSP…')
     setProgress('tsp', 55)
     const { order, cost } = solveTSP(matrix)
 
+    // Build full loop: order + return to start
+    const loop = [...order, order[0]]
     routeSource.clear()
-    const total = order.length - 1
+    const total = loop.length - 1
     for (let k = 0; k < total; k++) {
       setProgress('tsp', 55 + ((k + 1) / total) * 40)
       setStatus('tsp-status', `Drawing segment ${k + 1}/${total}…`)
       try {
         const geoData = await rpc('get_munich_vertex_route', {
-          from_vertex_id: vids[order[k]],
-          to_vertex_id: vids[order[k + 1]],
+          from_vertex_id: vids[loop[k]],
+          to_vertex_id: vids[loop[k + 1]],
         })
         const features = new GeoJSON().readFeatures(parseGeo(geoData), { dataProjection: 'EPSG:4326', featureProjection: 'EPSG:3857' })
         features.forEach(f => f.set('color', ROUTE_COLORS[k % ROUTE_COLORS.length]))
@@ -519,7 +522,7 @@ async function runTSP() {
     document.getElementById('tsp-dist').textContent        = fmtDist(cost)
     document.getElementById('tsp-stops-count').textContent = `${n} stops`
     document.getElementById('tsp-result').style.display = 'block'
-    setStatus('tsp-status', 'Order: ' + order.map(i => `${i + 1}`).join(' → '), 'success')
+    setStatus('tsp-status', 'Order: ' + order.map(i => `${i + 1}`).join(' → ') + ' → 1', 'success')
     hideProgress('tsp')
   } catch (err) {
     setStatus('tsp-status', err.message, 'error')
