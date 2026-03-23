@@ -190,8 +190,8 @@ document.querySelectorAll('.tab').forEach(tab => {
 function resetAll() {
   routeSource.clear(); markerSource.clear()
   routeFrom = null; routeTo = null
-  document.getElementById('from-select').value = ''
-  document.getElementById('to-select').value = ''
+  if (document.getElementById('from-input')) { document.getElementById('from-input').value = ''; document.getElementById('from-input').classList.remove('has-value') }
+  if (document.getElementById('to-input')) { document.getElementById('to-input').value = ''; document.getElementById('to-input').classList.remove('has-value') }
   document.getElementById('rt-result').style.display = 'none'
   setStatus('rt-status', '')
   updateGoBtn()
@@ -208,65 +208,154 @@ function setStatus(id, msg, type) { const el = document.getElementById(id); el.t
 
 // ── Route mode ────────────────────────────────────────────────
 let landmarks = []
-let routeFrom = null, routeTo = null, pickingFor = null
+let routeFrom = null, routeTo = null  // { vertexId, coord, name, type: 'landmark'|'road'|'geocode' }
+
+const fromInput = document.getElementById('from-input')
+const toInput   = document.getElementById('to-input')
+const fromSug   = document.getElementById('from-suggestions')
+const toSug     = document.getElementById('to-suggestions')
 
 function updateGoBtn() { document.getElementById('go-btn').disabled = !(routeFrom && routeTo) }
 
-function updatePickBtns() {
-  ;['from', 'to'].forEach(w => {
-    const btn = document.getElementById(`${w}-pick-btn`)
-    const point = w === 'from' ? routeFrom : routeTo
-    const sel = document.getElementById(`${w}-select`)
-    if (sel.value !== '') btn.textContent = `📍 Click map to set ${w === 'from' ? 'start' : 'end'} instead`
-    else if (point?.type === 'road') btn.textContent = `✅ Road point set — click to change`
-    else btn.textContent = `📍 Click map to set ${w === 'from' ? 'start' : 'end'}`
-    btn.classList.toggle('active', pickingFor === w)
-  })
+function setRoutePoint(which, point) {
+  if (which === 'from') { routeFrom = point; fromInput.value = point ? point.name : ''; fromInput.classList.toggle('has-value', !!point) }
+  else { routeTo = point; toInput.value = point ? point.name : ''; toInput.classList.toggle('has-value', !!point) }
+  updateGoBtn(); drawRouteMarkers()
 }
-
-function setPickingFor(which) {
-  pickingFor = pickingFor === which ? null : which
-  map.getTargetElement().style.cursor = pickingFor ? 'crosshair' : ''
-  if (pickingFor) setStatus('rt-status', `Click on the map to set the ${which === 'from' ? 'start' : 'end'} point`)
-  else if (document.getElementById('rt-status').textContent.startsWith('Click')) setStatus('rt-status', '')
-  updatePickBtns()
-}
-
-document.getElementById('from-pick-btn').addEventListener('click', () => setPickingFor('from'))
-document.getElementById('to-pick-btn').addEventListener('click', () => setPickingFor('to'))
 
 async function loadLandmarks() {
   try {
     landmarks = await rpc(city.rpc.landmarks)
-    const base = '<option value="">— choose or click map —</option>'
-    const opts = landmarks.map(lm => `<option value="${lm.id}">${lm.name}</option>`).join('')
-    document.getElementById('from-select').innerHTML = base + opts
-    document.getElementById('to-select').innerHTML = base + opts
-    drawLandmarkMarkers()
+    drawRouteMarkers()
     document.getElementById('city-title').textContent = `${city.emoji} ${city.name} Route`
   } catch (err) { setStatus('rt-status', 'Failed to load landmarks: ' + err.message, 'error') }
 }
 
-function drawLandmarkMarkers() {
+function drawRouteMarkers() {
   markerSource.clear()
-  const fromId = +document.getElementById('from-select').value
-  const toId = +document.getElementById('to-select').value
   landmarks.forEach(lm => {
-    const role = lm.id === fromId ? 'from' : lm.id === toId ? 'to' : 'landmark'
+    const isFrom = routeFrom?.type === 'landmark' && routeFrom.vertexId === lm.vertex_id
+    const isTo   = routeTo?.type === 'landmark' && routeTo.vertexId === lm.vertex_id
+    const role = isFrom ? 'from' : isTo ? 'to' : 'landmark'
     markerSource.addFeature(new Feature({ geometry: new Point(fromLonLat([lm.lon, lm.lat])), name: lm.name, id: lm.id, role, label: role !== 'landmark' ? (role === 'from' ? 'A' : 'B') : null }))
   })
-  if (routeFrom?.type === 'road') markerSource.addFeature(new Feature({ geometry: new Point(routeFrom.coord), role: 'from', label: 'A', name: 'Start' }))
-  if (routeTo?.type === 'road') markerSource.addFeature(new Feature({ geometry: new Point(routeTo.coord), role: 'to', label: 'B', name: 'End' }))
+  if (routeFrom && routeFrom.type !== 'landmark') markerSource.addFeature(new Feature({ geometry: new Point(routeFrom.coord), role: 'from', label: 'A', name: routeFrom.name }))
+  if (routeTo && routeTo.type !== 'landmark')     markerSource.addFeature(new Feature({ geometry: new Point(routeTo.coord), role: 'to', label: 'B', name: routeTo.name }))
 }
 
-function setEndpoint(which, val) {
-  const lm = landmarks.find(l => l.id === +val)
-  const point = val ? { vertexId: lm.vertex_id, coord: fromLonLat([lm.lon, lm.lat]), name: lm.name, type: 'landmark' } : null
-  if (which === 'from') routeFrom = point; else routeTo = point
-  updatePickBtns(); updateGoBtn(); drawLandmarkMarkers()
+// ── Autocomplete: landmarks + Photon geocoding ────────────────
+let searchTimers = { from: null, to: null }
+
+function setupSearch(which) {
+  const input = which === 'from' ? fromInput : toInput
+  const sugEl = which === 'from' ? fromSug : toSug
+
+  input.addEventListener('input', () => {
+    clearTimeout(searchTimers[which])
+    const q = input.value.trim()
+    if (q.length < 1) { sugEl.classList.remove('open'); return }
+    // Show matching landmarks immediately
+    showSuggestions(which, q)
+    // Debounce Photon search
+    if (q.length >= 2) {
+      searchTimers[which] = setTimeout(() => photonSearch(which, q), 300)
+    }
+  })
+
+  input.addEventListener('focus', () => {
+    const q = input.value.trim()
+    if (q.length >= 1) showSuggestions(which, q)
+    else showSuggestions(which, '') // show all landmarks
+  })
+
+  sugEl.addEventListener('click', (e) => {
+    const btn = e.target.closest('.sug-item')
+    if (!btn) return
+    sugEl.classList.remove('open')
+    const { lon, lat, name, vertexId, type } = btn.dataset
+    if (type === 'landmark') {
+      const lm = landmarks.find(l => l.vertex_id === +vertexId)
+      setRoutePoint(which, { vertexId: +vertexId, coord: fromLonLat([lm.lon, lm.lat]), name, type: 'landmark' })
+    } else {
+      // Geocode result — snap to nearest road
+      snapAndSetPoint(which, +lon, +lat, name)
+    }
+  })
 }
-document.getElementById('from-select').addEventListener('change', (e) => setEndpoint('from', e.target.value))
-document.getElementById('to-select').addEventListener('change', (e) => setEndpoint('to', e.target.value))
+
+function showSuggestions(which, query) {
+  const sugEl = which === 'from' ? fromSug : toSug
+  const q = query.toLowerCase()
+  // Filter landmarks
+  const matches = q ? landmarks.filter(lm => lm.name.toLowerCase().includes(q)).slice(0, 5) : landmarks.slice(0, 8)
+  let html = ''
+  if (matches.length) {
+    html += '<div class="sug-label">Landmarks</div>'
+    html += matches.map(lm => `<button class="sug-item landmark" data-type="landmark" data-vertex-id="${lm.vertex_id}" data-lon="${lm.lon}" data-lat="${lm.lat}" data-name="${lm.name}">
+      <div class="sug-name">📍 ${lm.name}</div>
+    </button>`).join('')
+  }
+  sugEl.innerHTML = html
+  sugEl.classList.toggle('open', html.length > 0)
+}
+
+async function photonSearch(which, q) {
+  const sugEl = which === 'from' ? fromSug : toSug
+  try {
+    const [lon, lat] = city.center
+    const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&lat=${lat}&lon=${lon}&limit=5`)
+    const data = await res.json()
+    if (!data.features?.length) return
+    // Append geocode results below existing landmark results
+    let geoHtml = '<div class="sug-label">Search results</div>'
+    geoHtml += data.features.map(f => {
+      const p = f.properties, coords = f.geometry.coordinates
+      const name = p.name || q
+      const detail = [p.street, p.city || p.county, p.country].filter(Boolean).join(', ')
+      const inBounds = isInBbox(coords[0], coords[1])
+      return `<button class="sug-item ${inBounds ? '' : 'out-of-bounds'}" data-type="geocode" data-lon="${coords[0]}" data-lat="${coords[1]}" data-name="${name}">
+        <div class="sug-name">${name}${!inBounds ? ' ⚠' : ''}</div>
+        <div class="sug-detail">${detail}</div>
+      </button>`
+    }).join('')
+    // Keep landmark results, append geo results
+    const existing = sugEl.querySelectorAll('.sug-label')
+    const lastLabel = Array.from(existing).find(el => el.textContent === 'Search results')
+    if (lastLabel) { /* remove old geo results */ let el = lastLabel; while (el) { const next = el.nextElementSibling; el.remove(); if (!next || next.classList.contains('sug-label')) break; el = next } lastLabel.remove() }
+    sugEl.insertAdjacentHTML('beforeend', geoHtml)
+    sugEl.classList.add('open')
+  } catch (err) { console.warn('Photon error:', err) }
+}
+
+async function snapAndSetPoint(which, lon, lat, name) {
+  setStatus('rt-status', 'Snapping to road…')
+  try {
+    const res = await rpc(city.rpc.nearest, { lat, lon })
+    const v = Array.isArray(res) ? res[0] : res
+    if (!v) throw new Error('No nearby road')
+    setRoutePoint(which, { vertexId: v.vertex_id, coord: fromLonLat([v.snap_lon, v.snap_lat]), name, type: 'geocode' })
+    setStatus('rt-status', '')
+  } catch (err) {
+    setStatus('rt-status', 'Could not snap to road — try a location within the city', 'error')
+  }
+}
+
+setupSearch('from')
+setupSearch('to')
+
+// Close suggestions on outside click
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#from-field')) fromSug.classList.remove('open')
+  if (!e.target.closest('#to-field')) toSug.classList.remove('open')
+})
+
+// Swap button
+document.getElementById('swap-btn').addEventListener('click', () => {
+  const tmp = routeFrom; routeFrom = routeTo; routeTo = tmp
+  fromInput.value = routeFrom?.name || ''; fromInput.classList.toggle('has-value', !!routeFrom)
+  toInput.value = routeTo?.name || ''; toInput.classList.toggle('has-value', !!routeTo)
+  updateGoBtn(); drawRouteMarkers()
+})
 
 document.getElementById('go-btn').addEventListener('click', async () => {
   if (!routeFrom || !routeTo) return
@@ -283,7 +372,7 @@ document.getElementById('go-btn').addEventListener('click', async () => {
     const features = new GeoJSON().readFeatures(parseGeo(geoData), { dataProjection: 'EPSG:4326', featureProjection: 'EPSG:3857' })
     features.forEach(f => f.set('color', '#2563eb'))
     routeSource.addFeatures(features)
-    drawLandmarkMarkers()
+    drawRouteMarkers()
     const ext = routeSource.getExtent()
     if (!extent.isEmpty(ext)) map.getView().fit(ext, { padding: [80, 80, 200, 80], maxZoom: 16, duration: 600 })
     const row = distData.find(d => String(d.from_vertex) === String(routeFrom.vertexId))
@@ -299,10 +388,8 @@ document.getElementById('go-btn').addEventListener('click', async () => {
 })
 
 document.getElementById('route-clear-btn').addEventListener('click', () => {
-  routeFrom = null; routeTo = null; setPickingFor(null)
-  document.getElementById('from-select').value = ''; document.getElementById('to-select').value = ''
+  setRoutePoint('from', null); setRoutePoint('to', null)
   routeSource.clear(); document.getElementById('rt-result').style.display = 'none'; setStatus('rt-status', '')
-  updatePickBtns(); updateGoBtn(); drawLandmarkMarkers()
 })
 
 // ── TSP mode ──────────────────────────────────────────────────
@@ -395,26 +482,20 @@ async function runTSP() {
 // ── Map click dispatcher ──────────────────────────────────────
 map.on('click', async (e) => {
   if (currentMode === 'route') {
-    if (pickingFor) {
-      const [lon, lat] = toLonLat(e.coordinate); const which = pickingFor; setPickingFor(null)
-      setStatus('rt-status', 'Snapping to road…')
-      try {
-        const res = await rpc(city.rpc.nearest, { lat, lon }); const v = Array.isArray(res) ? res[0] : res
-        if (!v) throw new Error('No nearby road found')
-        const snapCoord = fromLonLat([v.snap_lon, v.snap_lat])
-        if (which === 'from') { document.getElementById('from-select').value = ''; routeFrom = { vertexId: v.vertex_id, coord: snapCoord, name: 'Map point', type: 'road' } }
-        else { document.getElementById('to-select').value = ''; routeTo = { vertexId: v.vertex_id, coord: snapCoord, name: 'Map point', type: 'road' } }
-        updatePickBtns(); updateGoBtn(); drawLandmarkMarkers()
-        setStatus('rt-status', `${which === 'from' ? 'Start' : 'End'} point snapped to road ✓`)
-      } catch (err) { setStatus('rt-status', err.message, 'error') }
-      return
-    }
+    // Check if clicking a landmark
     const f = map.forEachFeatureAtPixel(e.pixel, f => f, { layerFilter: l => l === markerLayer })
     if (f?.get('id')) {
-      const id = f.get('id')
-      if (!routeFrom) { document.getElementById('from-select').value = id; document.getElementById('from-select').dispatchEvent(new Event('change')) }
-      else if (!routeTo) { document.getElementById('to-select').value = id; document.getElementById('to-select').dispatchEvent(new Event('change')) }
+      const lm = landmarks.find(l => l.id === f.get('id'))
+      if (lm) {
+        const which = !routeFrom ? 'from' : !routeTo ? 'to' : 'from'
+        setRoutePoint(which, { vertexId: lm.vertex_id, coord: fromLonLat([lm.lon, lm.lat]), name: lm.name, type: 'landmark' })
+      }
+      return
     }
+    // Click empty map → snap to road
+    const [lon, lat] = toLonLat(e.coordinate)
+    const which = !routeFrom ? 'from' : 'to'
+    snapAndSetPoint(which, lon, lat, `${lat.toFixed(4)}, ${lon.toFixed(4)}`)
   } else if (currentMode === 'tsp') {
     const f = map.forEachFeatureAtPixel(e.pixel, f => f, { layerFilter: l => l === markerLayer })
     if (f?.get('role') === 'tsp') { tspStops.splice(f.get('tspIdx'), 1); routeSource.clear(); document.getElementById('tsp-result').style.display = 'none'; redrawTSPMarkers(); refreshTSPUI(); return }
@@ -430,72 +511,6 @@ map.on('click', async (e) => {
       setStatus('tsp-status', `Stop ${tspStops.length} added`)
     } catch (err) { setStatus('tsp-status', err.message, 'error') }
   }
-})
-
-// ── Search (Photon geocoder) ──────────────────────────────────
-const searchInput   = document.getElementById('search-input')
-const searchResults = document.getElementById('search-results')
-let searchTimer = null
-
-searchInput.addEventListener('input', () => {
-  clearTimeout(searchTimer)
-  const q = searchInput.value.trim()
-  if (q.length < 2) { searchResults.style.display = 'none'; return }
-  searchTimer = setTimeout(() => photonSearch(q), 300)
-})
-
-searchInput.addEventListener('focus', () => {
-  if (searchResults.children.length > 0) searchResults.style.display = 'block'
-})
-
-document.addEventListener('click', (e) => {
-  if (!e.target.closest('#search-wrap')) searchResults.style.display = 'none'
-})
-
-async function photonSearch(q) {
-  try {
-    const [lon, lat] = city.center
-    const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&lat=${lat}&lon=${lon}&limit=6`)
-    const data = await res.json()
-    if (!data.features?.length) {
-      searchResults.innerHTML = '<div style="padding:0.5rem 0.75rem;font-size:0.75rem;color:#9ca3af;">No results</div>'
-      searchResults.style.display = 'block'
-      return
-    }
-    searchResults.innerHTML = data.features.map((f, i) => {
-      const p = f.properties
-      const coords = f.geometry.coordinates // [lon, lat]
-      const name = p.name || ''
-      const detail = [p.street, p.city || p.county, p.state, p.country].filter(Boolean).join(', ')
-      const inBounds = isInBbox(coords[0], coords[1])
-      return `<button class="search-item" data-idx="${i}" data-lon="${coords[0]}" data-lat="${coords[1]}" style="color:${inBounds ? '#374151' : '#ef4444'};">
-        <div style="font-weight:600;font-size:0.78rem;">${name}${!inBounds ? ' ⚠' : ''}</div>
-        <div style="font-size:0.65rem;color:${inBounds ? '#9ca3af' : '#fca5a5'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${detail}</div>
-      </button>`
-    }).join('')
-    searchResults.style.display = 'block'
-  } catch (err) {
-    console.warn('Search error:', err)
-  }
-}
-
-searchResults.addEventListener('click', (e) => {
-  const btn = e.target.closest('.search-item')
-  if (!btn) return
-  const lon = +btn.dataset.lon, lat = +btn.dataset.lat
-  searchResults.style.display = 'none'
-  searchInput.value = ''
-  // Fly to location
-  map.getView().animate({ center: fromLonLat([lon, lat]), zoom: 16, duration: 600 })
-  // Place a temporary marker
-  const marker = new Feature({ geometry: new Point(fromLonLat([lon, lat])), role: 'search', name: btn.querySelector('div').textContent })
-  marker.setStyle(new Style({
-    image: new CircleStyle({ radius: 10, fill: new Fill({ color: '#6366f1' }), stroke: new Stroke({ color: '#fff', width: 2.5 }) }),
-    text: new Text({ text: '📍', font: '16px sans-serif', offsetY: -22 }),
-  }))
-  markerSource.addFeature(marker)
-  // Remove after 5s
-  setTimeout(() => { try { markerSource.removeFeature(marker) } catch {} }, 5000)
 })
 
 // ── Geolocation ───────────────────────────────────────────────
