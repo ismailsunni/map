@@ -460,85 +460,44 @@ function solveTSP(matrix) {
   return { order, cost: best }
 }
 
-// Compute road distance in metres from a GeoJSON MultiLineString/LineString
-function geoJsonDistM(geoData) {
-  const geo = parseGeo(geoData)
-  const toRad = d => d * Math.PI / 180
-  function segDist(a, b) {
-    const R = 6371000
-    const dLat = toRad(b[1] - a[1]), dLon = toRad(b[0] - a[0])
-    const s = Math.sin(dLat/2)**2 + Math.cos(toRad(a[1])) * Math.cos(toRad(b[1])) * Math.sin(dLon/2)**2
-    return 2 * R * Math.asin(Math.sqrt(s))
-  }
-  function lineLen(coords) {
-    let d = 0
-    for (let i = 0; i < coords.length - 1; i++) d += segDist(coords[i], coords[i+1])
-    return d
-  }
-  if (geo.type === 'LineString') return lineLen(geo.coordinates)
-  if (geo.type === 'MultiLineString') return geo.coordinates.reduce((s, c) => s + lineLen(c), 0)
-  return 0
-}
-
 async function runTSP() {
   if (tspStops.length < 3) return
   document.getElementById('tsp-find-btn').disabled = true
   setStatus('tsp-status', 'Computing distances…')
   document.getElementById('tsp-result').style.display = 'none'
-  setProgress('tsp', 5)
+  setProgress('tsp', 20)
 
   try {
     const n = tspStops.length
     const vids = tspStops.map(s => s.vertex_id)
 
-    // Pre-fetch ALL pairwise routes and compute distances from geometry
+    const distances = await rpc('get_munich_random_distances', { vertex_ids: vids })
+    setProgress('tsp', 45)
+
+    const idxMap = new Map(vids.map((id, i) => [String(id), i]))
     const matrix = Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => i === j ? 0 : Infinity))
-    const routeCache = {}  // key: "i-j" → geoData string
-
-    const pairs = []
-    for (let i = 0; i < n; i++)
-      for (let j = 0; j < n; j++)
-        if (i !== j) pairs.push([i, j])
-
-    for (let p = 0; p < pairs.length; p++) {
-      const [i, j] = pairs[p]
-      setProgress('tsp', 5 + (p / pairs.length) * 45)
-      setStatus('tsp-status', `Fetching distances… ${p + 1}/${pairs.length}`)
-      const key = `${i}-${j}`, rev = `${j}-${i}`
-      try {
-        let geoData
-        if (routeCache[rev]) {
-          // Reuse reverse route — same road, same distance
-          geoData = routeCache[rev]
-        } else {
-          geoData = await rpc('get_munich_vertex_route', { from_vertex_id: vids[i], to_vertex_id: vids[j] })
-          routeCache[key] = geoData
-        }
-        matrix[i][j] = geoJsonDistM(geoData)
-      } catch (e) {
-        console.warn(`No route ${i}→${j}`, e)
-      }
-    }
+    distances.forEach(d => {
+      const i = idxMap.get(String(d.from_vertex))
+      const j = idxMap.get(String(d.to_vertex))
+      if (i !== undefined && j !== undefined && d.cost_m > 0) matrix[i][j] = d.cost_m
+    })
 
     setStatus('tsp-status', 'Solving TSP…')
-    setProgress('tsp', 52)
+    setProgress('tsp', 55)
     const { order, cost } = solveTSP(matrix)
 
-    // Draw full loop using cached routes
     const loop = [...order, order[0]]
     routeSource.clear()
     const total = loop.length - 1
     for (let k = 0; k < total; k++) {
-      setProgress('tsp', 52 + ((k + 1) / total) * 45)
+      setProgress('tsp', 55 + ((k + 1) / total) * 42)
       setStatus('tsp-status', `Drawing segment ${k + 1}/${total}…`)
-      const i = loop[k], j = loop[k + 1]
-      const key = `${i}-${j}`, rev = `${j}-${i}`
-      const geoData = routeCache[key] || routeCache[rev]
-      if (geoData) {
+      try {
+        const geoData = await rpc('get_munich_vertex_route', { from_vertex_id: vids[loop[k]], to_vertex_id: vids[loop[k + 1]] })
         const features = new GeoJSON().readFeatures(parseGeo(geoData), { dataProjection: 'EPSG:4326', featureProjection: 'EPSG:3857' })
         features.forEach(f => f.set('color', ROUTE_COLORS[k % ROUTE_COLORS.length]))
         routeSource.addFeatures(features)
-      }
+      } catch (e) { console.warn('Segment failed', e) }
     }
 
     redrawTSPMarkers()
