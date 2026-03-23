@@ -268,7 +268,39 @@
         <div class="panel-title" id="city-title">Route Finder</div>
         <div class="panel-subtitle">Real road routes · pgRouting</div>
       </div>
+      <button id="about-btn" title="About" style="background:#f3f4f6;border:none;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:0.75rem;color:#6b7280;flex-shrink:0;">?</button>
       <button id="minimize-btn" title="Minimize">–</button>
+    </div>
+
+    <!-- About modal -->
+    <div id="about-modal" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0.4);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:1rem;">
+      <div style="background:#fff;border-radius:16px;max-width:400px;width:100%;max-height:80vh;overflow-y:auto;padding:1.5rem;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+          <div style="font-size:1.1rem;font-weight:700;color:#1a1a1a;">About Route Finder</div>
+          <button id="about-close" style="background:#f3f4f6;border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:1rem;color:#6b7280;display:flex;align-items:center;justify-content:center;">✕</button>
+        </div>
+        <div style="font-size:0.8rem;color:#374151;line-height:1.7;">
+          <p style="margin:0 0 0.75rem;">Find the shortest road route between landmarks — or solve the <strong>Travelling Salesman Problem</strong> (TSP) for up to 8 stops.</p>
+
+          <div style="font-size:0.7rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.35rem;">How it works</div>
+          <p style="margin:0 0 0.75rem;">Routes follow <strong>real roads</strong>, not straight lines. The routing engine computes shortest paths on an actual road network graph using <a href="https://pgrouting.org/" target="_blank" style="color:#2563eb;text-decoration:none;">pgRouting</a> — the PostgreSQL extension for graph-based routing.</p>
+
+          <div style="font-size:0.7rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.35rem;">Architecture</div>
+          <ul style="margin:0 0 0.75rem;padding-left:1.2rem;">
+            <li><strong>Road data</strong> — OpenStreetMap, imported via <code style="background:#f3f4f6;padding:1px 4px;border-radius:3px;font-size:0.72rem;">osm2pgrouting</code></li>
+            <li><strong>Database</strong> — PostgreSQL + pgRouting, hosted on <a href="https://supabase.com/" target="_blank" style="color:#2563eb;text-decoration:none;">Supabase</a></li>
+            <li><strong>Routing</strong> — Dijkstra shortest path via SQL RPC functions</li>
+            <li><strong>TSP solver</strong> — Held-Karp algorithm (client-side, exact for ≤8 nodes)</li>
+            <li><strong>Map</strong> — <a href="https://openlayers.org/" target="_blank" style="color:#2563eb;text-decoration:none;">OpenLayers</a> with CartoDB/OSM/Topo basemaps</li>
+          </ul>
+
+          <div style="font-size:0.7rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.35rem;">Cities</div>
+          <p style="margin:0 0 0.75rem;">🏛️ <strong>Yogyakarta</strong> — 20 landmarks<br>🏰 <strong>München</strong> — 25 landmarks<br>You can also click anywhere on the map to route between arbitrary road points.</p>
+
+          <div style="font-size:0.7rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.35rem;">Source</div>
+          <p style="margin:0;"><a href="https://github.com/ismailsunni/map" target="_blank" style="color:#2563eb;text-decoration:none;">github.com/ismailsunni/map</a></p>
+        </div>
+      </div>
     </div>
 
     <div id="panel-body">
@@ -336,6 +368,12 @@
     <button data-basemap="topo">Topo</button>
   </div>
 
+  <script>
+    const aboutModal = document.getElementById('about-modal')
+    document.getElementById('about-btn').addEventListener('click', () => { aboutModal.style.display = 'flex' })
+    document.getElementById('about-close').addEventListener('click', () => { aboutModal.style.display = 'none' })
+    aboutModal.addEventListener('click', (e) => { if (e.target === aboutModal) aboutModal.style.display = 'none' })
+  </script>
   <script type="module" src="./src/main.js"></script>
 </body>
 </html>
