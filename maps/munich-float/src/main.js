@@ -1,4 +1,5 @@
 import 'ol/ol.css'
+import OSM from 'ol/source/OSM'
 import Map from 'ol/Map'
 import View from 'ol/View'
 import TileLayer from 'ol/layer/Tile'
@@ -37,9 +38,31 @@ function fmtWalk(m) { const t = Math.round(m / 83); return t < 60 ? `${t}m` : `$
 function fmtDrive(m) { const t = Math.round(m / 417); return t < 1 ? '<1m' : `${t}m` }
 function parseGeo(raw) { return typeof raw === 'string' ? JSON.parse(raw) : raw }
 
+// ── Basemaps ──────────────────────────────────────────────────
+const BASEMAPS = {
+  positron: {
+    label: 'Light',
+    source: () => new XYZ({
+      url: 'https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+      attributions: '© <a href="https://carto.com/">CARTO</a> © <a href="https://www.openstreetmap.org/copyright">OSM</a>',
+      crossOrigin: 'anonymous',
+    }),
+  },
+  osm: {
+    label: 'OSM',
+    source: () => new OSM(),
+  },
+  topo: {
+    label: 'Topo',
+    source: () => new XYZ({
+      url: 'https://tile.opentopomap.org/{z}/{x}/{y}.png',
+      attributions: '© <a href="https://opentopomap.org/">OpenTopoMap</a> © <a href="https://www.openstreetmap.org/copyright">OSM</a>',
+      crossOrigin: 'anonymous',
+    }),
+  },
+}
+
 // ── Map ───────────────────────────────────────────────────────
-const MC_EXTENT = [-1291000, 6120000, -1260000, 6140000] // rough Munich bounds in EPSG:3857 approx
-// Actually compute properly:
 const munichCenter = fromLonLat([11.576, 48.137])
 
 const routeSource  = new VectorSource()
@@ -106,14 +129,7 @@ const markerLayer = new VectorLayer({
 const map = new Map({
   target: 'map',
   layers: [
-    new TileLayer({
-      source: new XYZ({
-        // CartoDB Positron — clean, minimal, free
-        url: 'https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
-        attributions: '© <a href="https://carto.com/">CARTO</a> © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        crossOrigin: 'anonymous',
-      }),
-    }),
+    new TileLayer({ source: BASEMAPS.positron.source() }),
     routeLayer,
     markerLayer,
   ],
@@ -123,6 +139,20 @@ const map = new Map({
     minZoom: 11,
     maxZoom: 18,
   }),
+})
+
+// Keep a reference to the base tile layer for switching
+const baseTileLayer = map.getLayers().item(0)
+
+// ── Basemap switcher ──────────────────────────────────────────
+document.querySelectorAll('#basemap-switcher button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const key = btn.dataset.basemap
+    if (!BASEMAPS[key]) return
+    baseTileLayer.setSource(BASEMAPS[key].source())
+    document.querySelectorAll('#basemap-switcher button').forEach(b => b.classList.remove('active'))
+    btn.classList.add('active')
+  })
 })
 
 // ── Tooltip ───────────────────────────────────────────────────

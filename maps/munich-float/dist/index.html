@@ -6,19 +6,26 @@
   <title>München Route · Map Collection</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏰</text></svg>" />
   <style>
-    /* back button */
-    .back-btn {
+    /* ── Basemap switcher ── */
+    #basemap-switcher {
       position: fixed; top: 1rem; left: 1rem; z-index: 200;
-      background: #fff; color: #374151;
-      padding: 0.35rem 0.75rem; border-radius: 6px;
-      font-size: 0.75rem; font-weight: 600;
-      text-decoration: none;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+      display: flex; gap: 2px;
+      background: #fff;
       border: 1px solid #e5e7eb;
-      transition: background 0.15s;
+      border-radius: 7px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    #basemap-switcher button {
+      padding: 0.3rem 0.6rem;
+      border: none; background: none;
+      font-size: 0.7rem; font-weight: 600;
+      color: #9ca3af; cursor: pointer;
+      transition: all 0.15s;
       white-space: nowrap;
     }
-    .back-btn:hover { background: #f3f4f6; }
+    #basemap-switcher button.active { background: #1a1a1a; color: #fff; }
+    #basemap-switcher button:not(.active):hover { background: #f3f4f6; color: #374151; }
   </style>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
@@ -46,17 +53,25 @@
       display: flex;
       align-items: center;
       gap: 0.6rem;
-      padding: 0.75rem 1rem 0.75rem 1.1rem;
-      cursor: pointer;
+      padding: 0.65rem 0.9rem 0.65rem 0.75rem;
       user-select: none;
       background: #fff;
       border-bottom: 1px solid #f0f0f0;
       color: #1a1a1a;
     }
-    #panel-header:hover { background: #fafafa; }
 
-    .panel-title { font-size: 0.9rem; font-weight: 700; flex: 1; letter-spacing: -0.01em; color: #1a1a1a; }
-    .panel-subtitle { font-size: 0.62rem; font-weight: 500; color: #9ca3af; }
+    #back-link {
+      display: flex; align-items: center; justify-content: center;
+      width: 26px; height: 26px; border-radius: 6px;
+      background: #f3f4f6; color: #6b7280;
+      text-decoration: none; font-size: 0.85rem;
+      flex-shrink: 0;
+      transition: background 0.15s, color 0.15s;
+    }
+    #back-link:hover { background: #e5e7eb; color: #374151; }
+
+    .panel-title { font-size: 0.88rem; font-weight: 700; letter-spacing: -0.01em; color: #1a1a1a; }
+    .panel-subtitle { font-size: 0.6rem; font-weight: 500; color: #9ca3af; }
 
     #minimize-btn {
       background: #f3f4f6;
@@ -274,7 +289,7 @@
     .mode-section { display: none; flex-direction: column; gap: 0.65rem; }
     .mode-section.active { display: flex; }
   </style>
-  <script type="module" crossorigin src="./assets/index-DTAg4pkP.js"></script>
+  <script type="module" crossorigin src="./assets/index-CjWV4kKN.js"></script>
   <link rel="stylesheet" crossorigin href="./assets/index-BtPuoxOl.css">
 </head>
 <body>
@@ -283,7 +298,8 @@
   <!-- Floating panel -->
   <div id="panel">
     <div id="panel-header">
-      <div>
+      <a href="../../../index.html" id="back-link" title="Back to gallery">←</a>
+      <div style="flex:1">
         <div class="panel-title">München Route</div>
         <div class="panel-subtitle">Real road routes · pgRouting</div>
       </div>
@@ -345,7 +361,13 @@
   </div>
 
   <div id="tooltip" class="ol-tooltip" style="display:none"></div>
-  <a class="back-btn" href="../../../index.html">← Gallery</a>
+
+  <!-- Basemap switcher -->
+  <div id="basemap-switcher">
+    <button data-basemap="positron" class="active">Light</button>
+    <button data-basemap="osm">OSM</button>
+    <button data-basemap="topo">Topo</button>
+  </div>
 
 </body>
 </html>
