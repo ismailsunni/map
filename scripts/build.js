@@ -93,6 +93,11 @@ for (const id of mapIds) {
       console.log(`  📁 ${id}/ (built)`)
       copyDir(builtDir, destDir)
     }
+    // Also copy thumb.png from source if it exists
+    const thumbSrc = path.join(mapDir, 'thumb.png')
+    if (fs.existsSync(thumbSrc)) {
+      copyFile(thumbSrc, path.join(destDir, 'thumb.png'))
+    }
   } else {
     // Plain HTML — copy whole folder, skip node_modules/dist
     console.log(`  📄 ${id}/ (plain HTML)`)

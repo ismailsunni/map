@@ -5,14 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Map Collection</title>
   <meta name="description" content="A personal gallery of interactive maps built with OpenLayers, MapLibre GL, and CesiumJS." />
-  <!-- Favicon: map pin SVG -->
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗺️</text></svg>" />
   <link rel="stylesheet" href="assets/gallery.css" />
 </head>
 <body>
+  <button class="theme-toggle" id="theme-toggle" title="Toggle dark mode">🌙</button>
+
   <header>
     <h1>🗺️ Map Collection</h1>
-    <p>A personal collection of interactive maps built with various mapping libraries.</p>
+    <p>Interactive maps built with OpenLayers, MapLibre, and CesiumJS.</p>
   </header>
 
   <div class="gallery-wrap">
@@ -28,10 +29,34 @@
     <a href="https://maplibre.org/" target="_blank" rel="noopener">MapLibre</a>
     <span>·</span>
     <a href="https://cesium.com/" target="_blank" rel="noopener">CesiumJS</a>
-    <span>· Hosted on GitHub Pages</span>
+    <span>·</span>
+    <a href="https://github.com/ismailsunni/map" target="_blank" rel="noopener">Source</a>
   </footer>
 
   <script>
+    // ── Theme toggle ──
+    const toggle = document.getElementById('theme-toggle');
+    const html = document.documentElement;
+
+    function setTheme(dark) {
+      html.setAttribute('data-theme', dark ? 'dark' : 'light');
+      toggle.textContent = dark ? '☀️' : '🌙';
+      localStorage.setItem('theme', dark ? 'dark' : 'light');
+    }
+
+    // Init from localStorage or system preference
+    const saved = localStorage.getItem('theme');
+    if (saved) {
+      setTheme(saved === 'dark');
+    } else {
+      setTheme(window.matchMedia('(prefers-color-scheme: dark)').matches);
+    }
+
+    toggle.addEventListener('click', () => {
+      setTheme(html.getAttribute('data-theme') !== 'dark');
+    });
+
+    // ── Gallery ──
     const ICONS = {
       'OpenLayers': '🌍',
       'MapLibre':   '🗺️',
