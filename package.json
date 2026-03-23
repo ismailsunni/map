@@ -1,0 +1,14 @@
+{
+  "name": "map-collection",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.js",
+    "dev:munich-float": "npm run dev --workspace=maps/munich-float",
+    "build:munich-float": "npm run build --workspace=maps/munich-float"
+  },
+  "workspaces": [
+    "maps/munich-float"
+  ]
+}

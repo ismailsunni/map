@@ -5,7 +5,6 @@
     "description": "Find routes and solve TSP across Munich landmarks. Floating collapsible panel, fun colourful style, real road distances via pgRouting + Supabase.",
     "library": "OpenLayers",
     "libraryColor": "#ff6b6b",
-    "path": "maps/munich-float/dist/index.html",
     "thumbnail": "thumb.png",
     "tags": ["routing", "pgrouting", "supabase", "munich", "germany", "tsp", "vite"]
   },

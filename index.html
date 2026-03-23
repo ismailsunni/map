@@ -41,7 +41,7 @@
     async function loadGallery() {
       const gallery = document.getElementById('gallery');
       try {
-        const res = await fetch('maps/maps.json');
+        const res = await fetch('maps.json');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const maps = await res.json();
 
@@ -54,10 +54,10 @@
           const icon = ICONS[m.library] || '📍';
           const tags = (m.tags || []).map(t => `<span class="tag">${t}</span>`).join('');
           return `
-            <a class="card" href="${m.path || `maps/${m.id}/index.html`}">
+            <a class="card" href="${m.id}/">
               <div class="card-thumb">
                 <img
-                  src="maps/${m.id}/thumb.png"
+                  src="${m.id}/thumb.png"
                   alt="${m.title} thumbnail"
                   onerror="this.style.display='none'"
                 />
