@@ -453,7 +453,10 @@ function solveTSP(matrix) {
   }
   const full = (1 << n) - 1
   let best = INF, last = -1
-  for (let u = 1; u < n; u++) if (dp[full][u] < best) { best = dp[full][u]; last = u }
+  for (let u = 1; u < n; u++) {
+    const c = dp[full][u] + matrix[u][0]  // include return to start
+    if (c < best) { best = c; last = u }
+  }
   const order = []; let mask = full, cur = last
   while (cur !== -1) { order.push(cur); const prev = parent[mask][cur]; mask ^= (1 << cur); cur = prev }
   order.reverse()
@@ -474,12 +477,11 @@ async function runTSP() {
     const distances = await rpc('get_munich_random_distances', { vertex_ids: vids })
     setProgress('tsp', 45)
 
-    const idxMap = new Map(vids.map((id, i) => [String(id), i]))
     const matrix = Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => i === j ? 0 : Infinity))
     distances.forEach(d => {
-      const i = idxMap.get(String(d.from_vertex))
-      const j = idxMap.get(String(d.to_vertex))
-      if (i !== undefined && j !== undefined && d.cost_m > 0) matrix[i][j] = d.cost_m
+      const i = tspStops.findIndex(s => s.vertex_id === d.from_vertex)
+      const j = tspStops.findIndex(s => s.vertex_id === d.to_vertex)
+      if (i >= 0 && j >= 0) matrix[i][j] = d.cost_m
     })
 
     setStatus('tsp-status', 'Solving TSP…')
