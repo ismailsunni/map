@@ -1,39 +1,21 @@
 [
   {
-    "id": "yogya-float",
+    "id": "yogyakarta",
     "title": "Yogyakarta Route",
-    "description": "Find routes and solve TSP across Yogyakarta landmarks. Floating collapsible panel, real road distances via pgRouting + Supabase.",
+    "description": "Find routes and solve TSP across Yogyakarta landmarks. Real road distances via pgRouting + Supabase.",
     "library": "OpenLayers",
     "libraryColor": "#4a90d9",
     "thumbnail": "thumb.png",
-    "tags": ["routing", "pgrouting", "supabase", "yogyakarta", "indonesia", "tsp", "vite"]
+    "tags": ["routing", "pgrouting", "supabase", "yogyakarta", "indonesia", "tsp"]
   },
   {
-    "id": "munich-float",
-    "title": "München Route · Float",
-    "description": "Find routes and solve TSP across Munich landmarks. Floating collapsible panel, fun colourful style, real road distances via pgRouting + Supabase.",
-    "library": "OpenLayers",
-    "libraryColor": "#ff6b6b",
-    "thumbnail": "thumb.png",
-    "tags": ["routing", "pgrouting", "supabase", "munich", "germany", "tsp", "vite"]
-  },
-  {
-    "id": "munich-route",
-    "title": "München Route Finder",
-    "description": "Find routes between 25 Munich landmarks, click any two points, or solve TSP for up to 8 stops. Real road distances via pgRouting.",
+    "id": "muenchen",
+    "title": "München Route",
+    "description": "Find routes and solve TSP across Munich landmarks. Real road distances via pgRouting + Supabase.",
     "library": "OpenLayers",
     "libraryColor": "#4a90d9",
     "thumbnail": "thumb.png",
     "tags": ["routing", "pgrouting", "supabase", "munich", "germany", "tsp"]
-  },
-  {
-    "id": "ljubljana-route",
-    "title": "Ljubljana Route Finder",
-    "description": "Find the real road route between 25 Ljubljana landmarks. Powered by pgRouting on Supabase — actual street distances, walk and drive time estimates.",
-    "library": "OpenLayers",
-    "libraryColor": "#4a90d9",
-    "thumbnail": "thumb.png",
-    "tags": ["routing", "pgrouting", "supabase", "ljubljana", "slovenia"]
   },
   {
     "id": "daylight-duration",

@@ -9,7 +9,7 @@
     "build:munich-float": "npm run build --workspace=maps/munich-float"
   },
   "workspaces": [
-    "maps/munich-float",
-    "maps/yogya-float"
+    "maps/muenchen",
+    "maps/yogyakarta"
   ]
 }
