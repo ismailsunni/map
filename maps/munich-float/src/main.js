@@ -45,7 +45,7 @@ const munichCenter = fromLonLat([11.576, 48.137])
 const routeSource  = new VectorSource()
 const markerSource = new VectorSource()
 
-const ROUTE_COLORS = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#54a0ff', '#5f27cd']
+const ROUTE_COLORS = ['#2563eb', '#059669', '#7c3aed', '#b45309', '#be185d', '#0891b2']
 
 const routeLayer = new VectorLayer({
   source: routeSource,
@@ -108,9 +108,9 @@ const map = new Map({
   layers: [
     new TileLayer({
       source: new XYZ({
-        // Bright, fun Positron-style but more colourful — using Stadia Outdoors
-        url: 'https://tiles.stadiamaps.com/tiles/outdoors/{z}/{x}/{y}.png',
-        attributions: '© <a href="https://stadiamaps.com/">Stadia Maps</a> © <a href="https://www.openstreetmap.org/copyright">OSM</a>',
+        // CartoDB Positron — clean, minimal, free
+        url: 'https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+        attributions: '© <a href="https://carto.com/">CARTO</a> © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         crossOrigin: 'anonymous',
       }),
     }),
@@ -312,7 +312,7 @@ document.getElementById('go-btn').addEventListener('click', async () => {
 
     routeSource.clear()
     const features = new GeoJSON().readFeatures(parseGeo(geoData), { dataProjection: 'EPSG:4326', featureProjection: 'EPSG:3857' })
-    features.forEach(f => f.set('color', '#ff6b6b'))
+    features.forEach(f => f.set('color', '#2563eb'))
     routeSource.addFeatures(features)
     drawLandmarkMarkers()
 
@@ -325,7 +325,7 @@ document.getElementById('go-btn').addEventListener('click', async () => {
     document.getElementById('rt-walk').textContent  = fmtWalk(distM)
     document.getElementById('rt-drive').textContent = fmtDrive(distM)
     document.getElementById('rt-result').style.display = 'block'
-    setStatus('rt-status', `🎉 ${routeFrom.name} → ${routeTo.name}`, 'success')
+    setStatus('rt-status', `${routeFrom.name} → ${routeTo.name}`, 'success')
     hideProgress('rt')
   } catch (err) {
     setStatus('rt-status', err.message, 'error')
@@ -475,7 +475,7 @@ async function runTSP() {
     document.getElementById('tsp-dist').textContent        = fmtDist(cost)
     document.getElementById('tsp-stops-count').textContent = `${n} stops`
     document.getElementById('tsp-result').style.display = 'block'
-    setStatus('tsp-status', '🎉 Order: ' + order.map(i => `${i + 1}`).join(' → '), 'success')
+    setStatus('tsp-status', 'Order: ' + order.map(i => `${i + 1}`).join(' → '), 'success')
     hideProgress('tsp')
   } catch (err) {
     setStatus('tsp-status', err.message, 'error')

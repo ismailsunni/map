@@ -6,17 +6,18 @@
   <title>München Route · Map Collection</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏰</text></svg>" />
   <style>
-    /* back button (inlined from gallery.css so it works post-build from dist/) */
+    /* back button */
     .back-btn {
       position: fixed; top: 1rem; left: 1rem; z-index: 200;
       background: #fff; color: #374151;
-      padding: 0.4rem 0.8rem; border-radius: 20px;
-      font-size: 0.78rem; font-weight: 700;
+      padding: 0.35rem 0.75rem; border-radius: 6px;
+      font-size: 0.75rem; font-weight: 600;
       text-decoration: none;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
-      transition: background 0.15s, color 0.15s;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+      border: 1px solid #e5e7eb;
+      transition: background 0.15s;
     }
-    .back-btn:hover { background: #fef3c7; color: #d97706; }
+    .back-btn:hover { background: #f3f4f6; }
   </style>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
@@ -47,25 +48,26 @@
       padding: 0.75rem 1rem 0.75rem 1.1rem;
       cursor: pointer;
       user-select: none;
-      background: linear-gradient(135deg, #ff6b6b 0%, #feca57 50%, #48dbfb 100%);
-      color: #fff;
+      background: #fff;
+      border-bottom: 1px solid #f0f0f0;
+      color: #1a1a1a;
     }
-    #panel-header:hover { filter: brightness(1.05); }
+    #panel-header:hover { background: #fafafa; }
 
-    .panel-title { font-size: 0.95rem; font-weight: 800; flex: 1; letter-spacing: -0.01em; }
-    .panel-subtitle { font-size: 0.65rem; font-weight: 600; opacity: 0.8; }
+    .panel-title { font-size: 0.9rem; font-weight: 700; flex: 1; letter-spacing: -0.01em; color: #1a1a1a; }
+    .panel-subtitle { font-size: 0.62rem; font-weight: 500; color: #9ca3af; }
 
     #minimize-btn {
-      background: rgba(255,255,255,0.25);
+      background: #f3f4f6;
       border: none;
       border-radius: 50%;
-      width: 28px; height: 28px;
+      width: 26px; height: 26px;
       display: flex; align-items: center; justify-content: center;
-      cursor: pointer; font-size: 0.9rem; color: #fff;
+      cursor: pointer; font-size: 0.75rem; color: #6b7280;
       transition: background 0.15s;
       flex-shrink: 0;
     }
-    #minimize-btn:hover { background: rgba(255,255,255,0.4); }
+    #minimize-btn:hover { background: #e5e7eb; }
 
     /* ── Panel body ── */
     #panel-body {
@@ -78,28 +80,27 @@
     /* ── Tabs ── */
     .tabs {
       display: flex;
-      gap: 0.4rem;
-      background: #f3f4f6;
-      border-radius: 12px;
-      padding: 4px;
+      gap: 0;
+      border-bottom: 1px solid #e5e7eb;
     }
     .tab {
       flex: 1;
-      padding: 0.45rem 0.5rem;
+      padding: 0.5rem 0.5rem;
       border: none;
+      border-bottom: 2px solid transparent;
       background: none;
-      border-radius: 9px;
       font-size: 0.78rem;
-      font-weight: 700;
+      font-weight: 600;
       color: #9ca3af;
       cursor: pointer;
       transition: all 0.15s;
+      margin-bottom: -1px;
     }
     .tab.active {
-      background: #fff;
       color: #374151;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      border-bottom-color: #374151;
     }
+    .tab:hover:not(.active) { color: #6b7280; }
 
     /* ── Form elements ── */
     .field { display: flex; flex-direction: column; gap: 0.25rem; }
@@ -125,21 +126,22 @@
 
     .pick-btn {
       width: 100%;
-      padding: 0.45rem 0.7rem;
-      background: #fffbeb;
-      border: 2px dashed #fbbf24;
-      border-radius: 10px;
-      font-size: 0.78rem;
-      font-weight: 700;
-      color: #d97706;
+      padding: 0.4rem 0.7rem;
+      background: #f9fafb;
+      border: 1.5px dashed #d1d5db;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #6b7280;
       cursor: crosshair;
       transition: all 0.15s;
       text-align: center;
     }
+    .pick-btn:hover { border-color: #9ca3af; color: #374151; background: #f3f4f6; }
     .pick-btn.active {
-      background: #fef3c7;
-      border-color: #f59e0b;
-      box-shadow: 0 0 0 3px rgba(251,191,36,0.25);
+      background: #f0fdf4;
+      border-color: #6ee7b7;
+      color: #059669;
     }
 
     /* ── Buttons ── */
@@ -154,11 +156,10 @@
     .btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
     .btn-primary {
-      background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+      background: #1a1a1a;
       color: #fff;
-      box-shadow: 0 4px 12px rgba(255,107,107,0.3);
     }
-    .btn-primary:hover:not(:disabled) { opacity: 0.9; }
+    .btn-primary:hover:not(:disabled) { background: #374151; }
 
     .btn-ghost {
       background: #f3f4f6;
@@ -171,16 +172,16 @@
 
     /* ── Result card ── */
     .result-card {
-      background: linear-gradient(135deg, #f0fdf4 0%, #eff6ff 100%);
-      border: 2px solid #d1fae5;
-      border-radius: 14px;
-      padding: 0.75rem 0.9rem;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 0.65rem 0.85rem;
       display: none;
     }
     .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
     .stat { text-align: center; }
-    .stat-value { font-size: 1.1rem; font-weight: 800; color: #059669; }
-    .stat-label { font-size: 0.62rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 1px; }
+    .stat-value { font-size: 1rem; font-weight: 700; color: #1a1a1a; }
+    .stat-label { font-size: 0.6rem; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 1px; }
 
     /* ── Status ── */
     .status {
@@ -192,18 +193,18 @@
 
     /* ── TSP stops list ── */
     .stops-list {
-      display: flex; flex-wrap: wrap; gap: 0.35rem;
+      display: flex; flex-wrap: wrap; gap: 0.3rem;
       min-height: 1.8rem; align-content: flex-start;
     }
     .stop-chip {
-      display: inline-flex; align-items: center; gap: 0.3rem;
-      background: #fef3c7; border: 2px solid #fbbf24;
-      border-radius: 20px; padding: 0.2rem 0.5rem 0.2rem 0.4rem;
-      font-size: 0.72rem; font-weight: 700; color: #92400e;
+      display: inline-flex; align-items: center; gap: 0.25rem;
+      background: #f3f4f6; border: 1px solid #e5e7eb;
+      border-radius: 20px; padding: 0.2rem 0.5rem 0.2rem 0.45rem;
+      font-size: 0.71rem; font-weight: 600; color: #374151;
       cursor: pointer; transition: all 0.1s;
     }
-    .stop-chip:hover { background: #fde68a; border-color: #f59e0b; }
-    .stop-chip .remove { font-size: 0.8rem; color: #b45309; }
+    .stop-chip:hover { background: #fee2e2; border-color: #fca5a5; color: #991b1b; }
+    .stop-chip .remove { font-size: 0.8rem; color: #9ca3af; }
 
     .stops-hint {
       font-size: 0.72rem; color: #9ca3af; text-align: center;
@@ -212,28 +213,27 @@
 
     /* ── Progress bar ── */
     .progress {
-      height: 4px; background: #e5e7eb; border-radius: 2px; overflow: hidden; display: none;
+      height: 3px; background: #e5e7eb; border-radius: 2px; overflow: hidden; display: none;
     }
     .progress.active { display: block; }
     .progress-fill {
       height: 100%;
-      background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb);
+      background: #374151;
       border-radius: 2px;
       transition: width 0.4s ease;
     }
 
     /* ── Tooltip ── */
     .ol-tooltip {
-      background: #fff;
-      border: 2px solid #fbbf24;
-      border-radius: 10px;
+      background: #1a1a1a;
+      border-radius: 6px;
       padding: 4px 10px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      color: #374151;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #fff;
       white-space: nowrap;
       pointer-events: none;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
       transform: translate(-50%, -140%);
     }
 
@@ -242,16 +242,16 @@
     .ol-zoom .ol-zoom-in, .ol-zoom .ol-zoom-out {
       background: #fff !important;
       color: #374151 !important;
-      border-radius: 10px !important;
-      border: 2px solid #e5e7eb !important;
+      border-radius: 8px !important;
+      border: 1px solid #e5e7eb !important;
       width: 2rem !important; height: 2rem !important;
-      line-height: 1.7rem !important;
-      font-size: 1.1rem !important;
+      line-height: 1.8rem !important;
+      font-size: 1rem !important;
       margin: 2px !important;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08) !important;
     }
     .ol-zoom .ol-zoom-in:hover, .ol-zoom .ol-zoom-out:hover {
-      background: #fef3c7 !important; border-color: #fbbf24 !important;
+      background: #f3f4f6 !important;
     }
     .ol-attribution button { display: none; }
     .ol-attribution ul { font-size: 0.6rem; color: #9ca3af; background: rgba(255,255,255,0.8); border-radius: 6px; padding: 2px 6px; }
@@ -269,17 +269,17 @@
   <div id="panel">
     <div id="panel-header">
       <div>
-        <div class="panel-title">🏰 München Route</div>
-        <div class="panel-subtitle">Real road routes · pgRouting · Supabase</div>
+        <div class="panel-title">München Route</div>
+        <div class="panel-subtitle">Real road routes · pgRouting</div>
       </div>
-      <button id="minimize-btn" title="Minimize">▼</button>
+      <button id="minimize-btn" title="Minimize">–</button>
     </div>
 
     <div id="panel-body">
       <!-- Tabs -->
       <div class="tabs">
-        <button class="tab active" data-mode="route">🗺️ Route</button>
-        <button class="tab" data-mode="tsp">🧩 TSP</button>
+        <button class="tab active" data-mode="route">Route</button>
+        <button class="tab" data-mode="tsp">TSP</button>
       </div>
 
       <!-- Route mode -->
