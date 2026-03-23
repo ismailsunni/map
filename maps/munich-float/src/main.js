@@ -289,25 +289,13 @@ async function loadLandmarks() {
     const options = landmarks.map(lm => `<option value="${lm.id}">${lm.name}</option>`).join('')
     document.getElementById('from-select').innerHTML = base('— choose or click map —') + options
     document.getElementById('to-select').innerHTML   = base('— choose or click map —') + options
-    document.getElementById('tsp-select').innerHTML  = base('— pick a landmark —') + options
     drawLandmarkMarkers()
   } catch (err) {
     setStatus('rt-status', 'Failed to load landmarks: ' + err.message, 'error')
   }
 }
 
-function addTSPLandmark(id) {
-  const lm = landmarks.find(l => l.id === +id)
-  if (!lm) return
-  if (tspStops.length >= 8) { setStatus('tsp-status', 'Maximum 8 stops.', 'error'); return }
-  if (tspStops.some(s => s.vertex_id === lm.vertex_id)) { setStatus('tsp-status', `${lm.name} already added.`); return }
-  tspStops.push({ vertex_id: lm.vertex_id, coord: fromLonLat([lm.lon, lm.lat]), name: lm.name })
-  routeSource.clear()
-  document.getElementById('tsp-result').style.display = 'none'
-  document.getElementById('tsp-select').value = ''
-  redrawTSPMarkers(); refreshTSPUI()
-  setStatus('tsp-status', `${lm.name} added`)
-}
+
 
 function drawLandmarkMarkers() {
   markerSource.clear()
@@ -426,17 +414,6 @@ function refreshTSPUI() {
 
 function redrawTSPMarkers() {
   markerSource.clear()
-  // Draw all landmarks first (so they're clickable)
-  const tspVids = new Set(tspStops.map(s => s.vertex_id))
-  landmarks.forEach(lm => {
-    if (!tspVids.has(lm.vertex_id)) {
-      markerSource.addFeature(new Feature({
-        geometry: new Point(fromLonLat([lm.lon, lm.lat])),
-        name: lm.name, id: lm.id, role: 'landmark',
-      }))
-    }
-  })
-  // Draw TSP stops on top with numbers
   tspStops.forEach((s, i) => {
     markerSource.addFeature(new Feature({
       geometry: new Point(s.coord),
@@ -444,10 +421,6 @@ function redrawTSPMarkers() {
     }))
   })
 }
-
-document.getElementById('tsp-select').addEventListener('change', (e) => {
-  if (e.target.value) addTSPLandmark(e.target.value)
-})
 
 document.getElementById('tsp-clear-btn').addEventListener('click', () => {
   tspStops = []; routeSource.clear(); markerSource.clear()
@@ -487,59 +460,85 @@ function solveTSP(matrix) {
   return { order, cost: best }
 }
 
+// Compute road distance in metres from a GeoJSON MultiLineString/LineString
+function geoJsonDistM(geoData) {
+  const geo = parseGeo(geoData)
+  const toRad = d => d * Math.PI / 180
+  function segDist(a, b) {
+    const R = 6371000
+    const dLat = toRad(b[1] - a[1]), dLon = toRad(b[0] - a[0])
+    const s = Math.sin(dLat/2)**2 + Math.cos(toRad(a[1])) * Math.cos(toRad(b[1])) * Math.sin(dLon/2)**2
+    return 2 * R * Math.asin(Math.sqrt(s))
+  }
+  function lineLen(coords) {
+    let d = 0
+    for (let i = 0; i < coords.length - 1; i++) d += segDist(coords[i], coords[i+1])
+    return d
+  }
+  if (geo.type === 'LineString') return lineLen(geo.coordinates)
+  if (geo.type === 'MultiLineString') return geo.coordinates.reduce((s, c) => s + lineLen(c), 0)
+  return 0
+}
+
 async function runTSP() {
   if (tspStops.length < 3) return
   document.getElementById('tsp-find-btn').disabled = true
   setStatus('tsp-status', 'Computing distances…')
   document.getElementById('tsp-result').style.display = 'none'
-  setProgress('tsp', 20)
+  setProgress('tsp', 5)
 
   try {
+    const n = tspStops.length
     const vids = tspStops.map(s => s.vertex_id)
-    const distances = await rpc('get_munich_random_distances', { vertex_ids: vids })
-    setProgress('tsp', 40)
 
-    const n = vids.length
-    const idxMap = new Map(vids.map((id, i) => [String(id), i]))
-    // Use Infinity — matches the solver's INF=1e18 comparisons correctly
+    // Pre-fetch ALL pairwise routes and compute distances from geometry
     const matrix = Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => i === j ? 0 : Infinity))
-    distances.forEach(d => {
-      const i = idxMap.get(String(d.from_vertex))
-      const j = idxMap.get(String(d.to_vertex))
-      if (i !== undefined && j !== undefined && d.cost_m > 0) {
-        matrix[i][j] = d.cost_m
-        if (!isFinite(matrix[j][i])) matrix[j][i] = d.cost_m  // fill reverse if missing
-      }
-    })
-    // Check all pairs are populated
-    const missing = []
+    const routeCache = {}  // key: "i-j" → geoData string
+
+    const pairs = []
     for (let i = 0; i < n; i++)
       for (let j = 0; j < n; j++)
-        if (i !== j && !isFinite(matrix[i][j])) missing.push(`${vids[i]}→${vids[j]}`)
-    if (missing.length) {
-      throw new Error(`Missing road distances for ${missing.length} pairs. Try stops closer together.`)
+        if (i !== j) pairs.push([i, j])
+
+    for (let p = 0; p < pairs.length; p++) {
+      const [i, j] = pairs[p]
+      setProgress('tsp', 5 + (p / pairs.length) * 45)
+      setStatus('tsp-status', `Fetching distances… ${p + 1}/${pairs.length}`)
+      const key = `${i}-${j}`, rev = `${j}-${i}`
+      try {
+        let geoData
+        if (routeCache[rev]) {
+          // Reuse reverse route — same road, same distance
+          geoData = routeCache[rev]
+        } else {
+          geoData = await rpc('get_munich_vertex_route', { from_vertex_id: vids[i], to_vertex_id: vids[j] })
+          routeCache[key] = geoData
+        }
+        matrix[i][j] = geoJsonDistM(geoData)
+      } catch (e) {
+        console.warn(`No route ${i}→${j}`, e)
+      }
     }
 
     setStatus('tsp-status', 'Solving TSP…')
-    setProgress('tsp', 55)
+    setProgress('tsp', 52)
     const { order, cost } = solveTSP(matrix)
 
-    // Build full loop: order + return to start
+    // Draw full loop using cached routes
     const loop = [...order, order[0]]
     routeSource.clear()
     const total = loop.length - 1
     for (let k = 0; k < total; k++) {
-      setProgress('tsp', 55 + ((k + 1) / total) * 40)
+      setProgress('tsp', 52 + ((k + 1) / total) * 45)
       setStatus('tsp-status', `Drawing segment ${k + 1}/${total}…`)
-      try {
-        const geoData = await rpc('get_munich_vertex_route', {
-          from_vertex_id: vids[loop[k]],
-          to_vertex_id: vids[loop[k + 1]],
-        })
+      const i = loop[k], j = loop[k + 1]
+      const key = `${i}-${j}`, rev = `${j}-${i}`
+      const geoData = routeCache[key] || routeCache[rev]
+      if (geoData) {
         const features = new GeoJSON().readFeatures(parseGeo(geoData), { dataProjection: 'EPSG:4326', featureProjection: 'EPSG:3857' })
         features.forEach(f => f.set('color', ROUTE_COLORS[k % ROUTE_COLORS.length]))
         routeSource.addFeatures(features)
-      } catch (e) { console.warn('Segment failed', e) }
+      }
     }
 
     redrawTSPMarkers()
@@ -601,10 +600,9 @@ map.on('click', async (e) => {
       }
     }
   } else if (currentMode === 'tsp') {
-    const f = map.forEachFeatureAtPixel(e.pixel, f => f, { layerFilter: l => l === markerLayer })
-    if (!f) return
     // Click existing TSP stop → remove it
-    if (f.get('role') === 'tsp') {
+    const f = map.forEachFeatureAtPixel(e.pixel, f => f, { layerFilter: l => l === markerLayer })
+    if (f?.get('role') === 'tsp') {
       const idx = f.get('tspIdx')
       tspStops.splice(idx, 1)
       routeSource.clear()
@@ -612,9 +610,27 @@ map.on('click', async (e) => {
       redrawTSPMarkers(); refreshTSPUI()
       return
     }
-    // Click a landmark pin → add it as a stop
-    if (f.get('id')) {
-      addTSPLandmark(f.get('id'))
+    if (tspStops.length >= 8) { setStatus('tsp-status', 'Maximum 8 stops.', 'error'); return }
+
+    // Snap any click to nearest road vertex
+    const [lon, lat] = toLonLat(e.coordinate)
+    setStatus('tsp-status', 'Snapping to road…')
+    try {
+      const res = await rpc('get_munich_nearest_vertex', { lat, lon })
+      const v = Array.isArray(res) ? res[0] : res
+      if (!v) throw new Error('No nearby road found')
+      const nearLm = [...landmarks].sort((a, b) =>
+        Math.hypot(a.lon - lon, a.lat - lat) - Math.hypot(b.lon - lon, b.lat - lat)
+      )[0]
+      const name = nearLm && Math.hypot(nearLm.lon - lon, nearLm.lat - lat) < 0.008
+        ? nearLm.name : `${lat.toFixed(4)}, ${lon.toFixed(4)}`
+      tspStops.push({ vertex_id: v.vertex_id, coord: fromLonLat([v.snap_lon, v.snap_lat]), name })
+      routeSource.clear()
+      document.getElementById('tsp-result').style.display = 'none'
+      redrawTSPMarkers(); refreshTSPUI()
+      setStatus('tsp-status', `Stop ${tspStops.length} added`)
+    } catch (err) {
+      setStatus('tsp-status', err.message, 'error')
     }
   }
 })
