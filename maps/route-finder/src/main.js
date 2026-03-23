@@ -20,6 +20,7 @@ const CITIES = {
     name: 'Yogyakarta',
     emoji: '🏛️',
     center: [110.3695, -7.7956],
+    bbox: [110.28, -7.87, 110.50, -7.70], // [west, south, east, north]
     zoom: 13,
     rpc: {
       landmarks:  'get_yogyakarta_landmarks',
@@ -32,6 +33,7 @@ const CITIES = {
     name: 'München',
     emoji: '🏰',
     center: [11.576, 48.137],
+    bbox: [11.36, 48.06, 11.78, 48.25],
     zoom: 13,
     rpc: {
       landmarks:  'get_munich_landmarks',
@@ -40,6 +42,11 @@ const CITIES = {
       distances:  'get_munich_random_distances',
     },
   },
+}
+
+function isInBbox(lon, lat) {
+  const [w, s, e, n] = city.bbox
+  return lon >= w && lon <= e && lat >= s && lat <= n
 }
 
 // Read initial city from URL hash, default to first
@@ -423,6 +430,109 @@ map.on('click', async (e) => {
       setStatus('tsp-status', `Stop ${tspStops.length} added`)
     } catch (err) { setStatus('tsp-status', err.message, 'error') }
   }
+})
+
+// ── Search (Photon geocoder) ──────────────────────────────────
+const searchInput   = document.getElementById('search-input')
+const searchResults = document.getElementById('search-results')
+let searchTimer = null
+
+searchInput.addEventListener('input', () => {
+  clearTimeout(searchTimer)
+  const q = searchInput.value.trim()
+  if (q.length < 2) { searchResults.style.display = 'none'; return }
+  searchTimer = setTimeout(() => photonSearch(q), 300)
+})
+
+searchInput.addEventListener('focus', () => {
+  if (searchResults.children.length > 0) searchResults.style.display = 'block'
+})
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#search-wrap')) searchResults.style.display = 'none'
+})
+
+async function photonSearch(q) {
+  try {
+    const [lon, lat] = city.center
+    const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&lat=${lat}&lon=${lon}&limit=6`)
+    const data = await res.json()
+    if (!data.features?.length) {
+      searchResults.innerHTML = '<div style="padding:0.5rem 0.75rem;font-size:0.75rem;color:#9ca3af;">No results</div>'
+      searchResults.style.display = 'block'
+      return
+    }
+    searchResults.innerHTML = data.features.map((f, i) => {
+      const p = f.properties
+      const coords = f.geometry.coordinates // [lon, lat]
+      const name = p.name || ''
+      const detail = [p.street, p.city || p.county, p.state, p.country].filter(Boolean).join(', ')
+      const inBounds = isInBbox(coords[0], coords[1])
+      return `<button class="search-item" data-idx="${i}" data-lon="${coords[0]}" data-lat="${coords[1]}" style="color:${inBounds ? '#374151' : '#ef4444'};">
+        <div style="font-weight:600;font-size:0.78rem;">${name}${!inBounds ? ' ⚠' : ''}</div>
+        <div style="font-size:0.65rem;color:${inBounds ? '#9ca3af' : '#fca5a5'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${detail}</div>
+      </button>`
+    }).join('')
+    searchResults.style.display = 'block'
+  } catch (err) {
+    console.warn('Search error:', err)
+  }
+}
+
+searchResults.addEventListener('click', (e) => {
+  const btn = e.target.closest('.search-item')
+  if (!btn) return
+  const lon = +btn.dataset.lon, lat = +btn.dataset.lat
+  searchResults.style.display = 'none'
+  searchInput.value = ''
+  // Fly to location
+  map.getView().animate({ center: fromLonLat([lon, lat]), zoom: 16, duration: 600 })
+  // Place a temporary marker
+  const marker = new Feature({ geometry: new Point(fromLonLat([lon, lat])), role: 'search', name: btn.querySelector('div').textContent })
+  marker.setStyle(new Style({
+    image: new CircleStyle({ radius: 10, fill: new Fill({ color: '#6366f1' }), stroke: new Stroke({ color: '#fff', width: 2.5 }) }),
+    text: new Text({ text: '📍', font: '16px sans-serif', offsetY: -22 }),
+  }))
+  markerSource.addFeature(marker)
+  // Remove after 5s
+  setTimeout(() => { try { markerSource.removeFeature(marker) } catch {} }, 5000)
+})
+
+// ── Geolocation ───────────────────────────────────────────────
+const geoBtn = document.getElementById('geo-btn')
+let geoMarker = null
+
+geoBtn.addEventListener('click', () => {
+  if (!navigator.geolocation) { geoBtn.textContent = '✕'; return }
+  geoBtn.textContent = '...'
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const { longitude: lon, latitude: lat, accuracy } = pos.coords
+      const coord = fromLonLat([lon, lat])
+
+      // Remove old marker
+      if (geoMarker) { try { markerSource.removeFeature(geoMarker) } catch {} }
+
+      geoMarker = new Feature({ geometry: new Point(coord), role: 'geo', name: 'Your location' })
+      geoMarker.setStyle(new Style({
+        image: new CircleStyle({ radius: 8, fill: new Fill({ color: '#3b82f6' }), stroke: new Stroke({ color: '#fff', width: 3 }) }),
+      }))
+      markerSource.addFeature(geoMarker)
+
+      map.getView().animate({ center: coord, zoom: 16, duration: 600 })
+      geoBtn.textContent = '📍'
+
+      if (!isInBbox(lon, lat)) {
+        geoBtn.style.borderColor = '#fca5a5'
+        setTimeout(() => { geoBtn.style.borderColor = '#e5e7eb' }, 3000)
+      }
+    },
+    (err) => {
+      console.warn('Geolocation error:', err)
+      geoBtn.textContent = '📍'
+    },
+    { enableHighAccuracy: true, timeout: 10000 }
+  )
 })
 
 // ── Init ──────────────────────────────────────────────────────

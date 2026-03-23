@@ -256,6 +256,15 @@
 
     .mode-section { display: none; flex-direction: column; gap: 0.65rem; }
     .mode-section.active { display: flex; }
+
+    /* ── Search results ── */
+    .search-item {
+      display: block; width: 100%; text-align: left; padding: 0.45rem 0.75rem;
+      border: none; background: none; cursor: pointer;
+      border-bottom: 1px solid #f3f4f6; transition: background 0.1s;
+    }
+    .search-item:last-child { border-bottom: none; }
+    .search-item:hover { background: #f9fafb; }
   </style>
 </head>
 <body>
@@ -328,8 +337,19 @@
     </div>
   </div>
 
-  <!-- About button (map overlay) -->
-  <button id="about-btn" style="position:fixed;top:1rem;right:1rem;z-index:200;background:#fff;border:1px solid #e5e7eb;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:0.85rem;font-weight:700;color:#6b7280;box-shadow:0 1px 4px rgba(0,0,0,0.1);" title="About">ℹ</button>
+  <!-- Map overlay controls (top-right) -->
+  <div style="position:fixed;top:1rem;right:1rem;z-index:200;display:flex;gap:0.4rem;align-items:flex-start;">
+    <!-- Search -->
+    <div id="search-wrap" style="position:relative;">
+      <input id="search-input" type="text" placeholder="Search place..."
+        style="width:180px;padding:0.4rem 0.65rem;border:1px solid #e5e7eb;border-radius:8px;font-size:0.75rem;background:#fff;color:#374151;box-shadow:0 1px 4px rgba(0,0,0,0.1);outline:none;" />
+      <div id="search-results" style="display:none;position:absolute;top:100%;left:0;right:0;margin-top:4px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,0.12);overflow:hidden;max-height:260px;overflow-y:auto;"></div>
+    </div>
+    <!-- Geolocation -->
+    <button id="geo-btn" style="background:#fff;border:1px solid #e5e7eb;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:0.85rem;box-shadow:0 1px 4px rgba(0,0,0,0.1);transition:border-color 0.2s;" title="My location">📍</button>
+    <!-- About -->
+    <button id="about-btn" style="background:#fff;border:1px solid #e5e7eb;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:0.85rem;font-weight:700;color:#6b7280;box-shadow:0 1px 4px rgba(0,0,0,0.1);" title="About">ℹ</button>
+  </div>
 
   <!-- About modal -->
   <div id="about-modal" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0.35);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:1rem;">
