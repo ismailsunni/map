@@ -289,7 +289,7 @@
     .mode-section { display: none; flex-direction: column; gap: 0.65rem; }
     .mode-section.active { display: flex; }
   </style>
-  <script type="module" crossorigin src="./assets/index-Ct4lcSrJ.js"></script>
+  <script type="module" crossorigin src="./assets/index-Cx0NGM3H.js"></script>
   <link rel="stylesheet" crossorigin href="./assets/index-BtPuoxOl.css">
 </head>
 <body>
@@ -342,7 +342,11 @@
 
       <!-- TSP mode -->
       <div class="mode-section" id="mode-tsp">
-        <div class="stops-hint" id="tsp-hint">Click on the map to add stops (max 8)</div>
+        <div class="field">
+          <label>Add landmark</label>
+          <select id="tsp-select"><option value="">— pick a landmark —</option></select>
+        </div>
+        <div class="stops-hint" id="tsp-hint">Select landmarks above or click them on the map (max 8)</div>
         <div class="stops-list" id="tsp-stops-list"></div>
         <div class="btn-row">
           <button class="btn btn-primary" id="tsp-find-btn" disabled>Solve TSP →</button>

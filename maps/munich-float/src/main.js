@@ -285,16 +285,28 @@ document.getElementById('to-pick-btn').addEventListener('click',   () => setPick
 async function loadLandmarks() {
   try {
     landmarks = await rpc('get_munich_landmarks')
-    const fromSel = document.getElementById('from-select')
-    const toSel   = document.getElementById('to-select')
-    const base = '<option value="">— choose or click map —</option>'
+    const base = (placeholder) => `<option value="">${placeholder}</option>`
     const options = landmarks.map(lm => `<option value="${lm.id}">${lm.name}</option>`).join('')
-    fromSel.innerHTML = base + options
-    toSel.innerHTML   = base + options
+    document.getElementById('from-select').innerHTML = base('— choose or click map —') + options
+    document.getElementById('to-select').innerHTML   = base('— choose or click map —') + options
+    document.getElementById('tsp-select').innerHTML  = base('— pick a landmark —') + options
     drawLandmarkMarkers()
   } catch (err) {
     setStatus('rt-status', 'Failed to load landmarks: ' + err.message, 'error')
   }
+}
+
+function addTSPLandmark(id) {
+  const lm = landmarks.find(l => l.id === +id)
+  if (!lm) return
+  if (tspStops.length >= 8) { setStatus('tsp-status', 'Maximum 8 stops.', 'error'); return }
+  if (tspStops.some(s => s.vertex_id === lm.vertex_id)) { setStatus('tsp-status', `${lm.name} already added.`); return }
+  tspStops.push({ vertex_id: lm.vertex_id, coord: fromLonLat([lm.lon, lm.lat]), name: lm.name })
+  routeSource.clear()
+  document.getElementById('tsp-result').style.display = 'none'
+  document.getElementById('tsp-select').value = ''
+  redrawTSPMarkers(); refreshTSPUI()
+  setStatus('tsp-status', `${lm.name} added`)
 }
 
 function drawLandmarkMarkers() {
@@ -414,6 +426,17 @@ function refreshTSPUI() {
 
 function redrawTSPMarkers() {
   markerSource.clear()
+  // Draw all landmarks first (so they're clickable)
+  const tspVids = new Set(tspStops.map(s => s.vertex_id))
+  landmarks.forEach(lm => {
+    if (!tspVids.has(lm.vertex_id)) {
+      markerSource.addFeature(new Feature({
+        geometry: new Point(fromLonLat([lm.lon, lm.lat])),
+        name: lm.name, id: lm.id, role: 'landmark',
+      }))
+    }
+  })
+  // Draw TSP stops on top with numbers
   tspStops.forEach((s, i) => {
     markerSource.addFeature(new Feature({
       geometry: new Point(s.coord),
@@ -421,6 +444,10 @@ function redrawTSPMarkers() {
     }))
   })
 }
+
+document.getElementById('tsp-select').addEventListener('change', (e) => {
+  if (e.target.value) addTSPLandmark(e.target.value)
+})
 
 document.getElementById('tsp-clear-btn').addEventListener('click', () => {
   tspStops = []; routeSource.clear(); markerSource.clear()
@@ -574,9 +601,10 @@ map.on('click', async (e) => {
       }
     }
   } else if (currentMode === 'tsp') {
-    // Check if clicking existing marker to remove
     const f = map.forEachFeatureAtPixel(e.pixel, f => f, { layerFilter: l => l === markerLayer })
-    if (f?.get('role') === 'tsp') {
+    if (!f) return
+    // Click existing TSP stop → remove it
+    if (f.get('role') === 'tsp') {
       const idx = f.get('tspIdx')
       tspStops.splice(idx, 1)
       routeSource.clear()
@@ -584,27 +612,9 @@ map.on('click', async (e) => {
       redrawTSPMarkers(); refreshTSPUI()
       return
     }
-    if (tspStops.length >= 8) { setStatus('tsp-status', 'Maximum 8 stops reached.', 'error'); return }
-
-    const [lon, lat] = toLonLat(e.coordinate)
-    setStatus('tsp-status', 'Snapping to road…')
-    try {
-      const res = await rpc('get_munich_nearest_vertex', { lat, lon })
-      const v = Array.isArray(res) ? res[0] : res
-      if (!v) throw new Error('No nearby road found')
-      // Find nearest landmark name or use coords
-      const nearLm = landmarks.sort((a, b) =>
-        Math.hypot(a.lon - lon, a.lat - lat) - Math.hypot(b.lon - lon, b.lat - lat)
-      )[0]
-      const name = nearLm && Math.hypot(nearLm.lon - lon, nearLm.lat - lat) < 0.01
-        ? nearLm.name : `${lat.toFixed(4)}, ${lon.toFixed(4)}`
-      tspStops.push({ vertex_id: v.vertex_id, coord: fromLonLat([v.snap_lon, v.snap_lat]), name })
-      routeSource.clear()
-      document.getElementById('tsp-result').style.display = 'none'
-      redrawTSPMarkers(); refreshTSPUI()
-      setStatus('tsp-status', `Stop ${tspStops.length} added`)
-    } catch (err) {
-      setStatus('tsp-status', err.message, 'error')
+    // Click a landmark pin → add it as a stop
+    if (f.get('id')) {
+      addTSPLandmark(f.get('id'))
     }
   }
 })
