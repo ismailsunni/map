@@ -422,10 +422,18 @@ async function loadSheet() {
 loadBtn.addEventListener('click', loadSheet)
 urlInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') loadSheet() })
 
-// Restore last URL
+// Restore last URL, or use example sheet on first visit
 const savedUrl = localStorage.getItem('sheet_map_url')
 const savedName = localStorage.getItem('sheet_map_name')
-if (savedUrl) { urlInput.value = savedUrl; nameInput.value = savedName || '' }
+if (savedUrl) {
+  urlInput.value = savedUrl
+  nameInput.value = savedName || ''
+} else {
+  urlInput.value = 'https://docs.google.com/spreadsheets/d/1TiZDXj0TBgd0nRXMElFJpEG2RJwKmVjYXAVubpWwSG0/edit'
+}
+
+// Auto-load on first visit
+loadSheet()
 </script>
 </body>
 </html>
