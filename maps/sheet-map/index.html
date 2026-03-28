@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sheet Map · Map Collection</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@10.3.1/dist/ol.css" />
+  <script src="https://cdn.jsdelivr.net/npm/ol@10.3.1/dist/ol.js"></script>
+  <link rel="stylesheet" href="../assets/gallery.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+    #map { width: 100%; height: 100%; }
+
+    /* ── Floating panel ── */
+    #panel {
+      position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%);
+      z-index: 100; width: min(420px, calc(100vw - 2rem));
+      background: #fff; border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.06);
+      overflow: hidden;
+    }
+    #panel.minimized #panel-body { display: none; }
+
+    #panel-header {
+      display: flex; align-items: center; gap: 0.5rem;
+      padding: 0.6rem 0.85rem; background: #fff;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    #back-link {
+      display: flex; align-items: center; justify-content: center;
+      width: 26px; height: 26px; border-radius: 6px;
+      background: #f3f4f6; color: #6b7280;
+      text-decoration: none; font-size: 0.85rem; flex-shrink: 0;
+    }
+    #back-link:hover { background: #e5e7eb; color: #374151; }
+    .panel-title { font-size: 0.88rem; font-weight: 700; color: #1a1a1a; flex: 1; }
+    .panel-subtitle { font-size: 0.6rem; color: #9ca3af; }
+    #minimize-btn {
+      background: #f3f4f6; border: none; border-radius: 50%;
+      width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 0.75rem; color: #6b7280; flex-shrink: 0;
+    }
+    #minimize-btn:hover { background: #e5e7eb; }
+
+    #panel-body { padding: 0.85rem; display: flex; flex-direction: column; gap: 0.65rem; }
+
+    /* ── Form ── */
+    .field { display: flex; flex-direction: column; gap: 0.2rem; }
+    .field label {
+      font-size: 0.65rem; font-weight: 700; color: #9ca3af;
+      text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .field input {
+      width: 100%; padding: 0.45rem 0.6rem;
+      border: 1.5px solid #e5e7eb; border-radius: 8px;
+      font-size: 0.78rem; color: #374151; background: #f9fafb;
+      outline: none;
+    }
+    .field input:focus { border-color: #6b7280; background: #fff; }
+    .field input.error { border-color: #fca5a5; background: #fef2f2; }
+
+    .btn {
+      width: 100%; padding: 0.55rem 1rem; border: none; border-radius: 10px;
+      font-size: 0.82rem; font-weight: 700; cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-primary { background: #1a1a1a; color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: #374151; }
+
+    .status {
+      font-size: 0.72rem; color: #9ca3af; line-height: 1.5;
+      min-height: 1rem; text-align: center;
+    }
+    .status.error { color: #ef4444; }
+    .status.success { color: #10b981; }
+
+    .help-text { font-size: 0.65rem; color: #9ca3af; line-height: 1.5; }
+    .help-text a { color: #2563eb; }
+    .help-text code {
+      background: #f3f4f6; padding: 1px 4px; border-radius: 3px; font-size: 0.62rem;
+    }
+
+    /* ── Info bar ── */
+    #info-bar {
+      display: none; padding: 0.5rem 0.85rem;
+      border-top: 1px solid #f0f0f0;
+      font-size: 0.72rem; color: #6b7280;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    #info-bar .count { font-weight: 700; color: #1a1a1a; }
+
+    /* ── Tooltip ── */
+    .ol-tooltip {
+      background: #1a1a1a; border-radius: 8px; padding: 6px 12px;
+      font-size: 0.75rem; color: #fff; white-space: nowrap;
+      pointer-events: none; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      transform: translate(-50%, -140%); max-width: 250px;
+    }
+    .ol-tooltip .tt-name { font-weight: 700; }
+    .ol-tooltip .tt-detail { font-size: 0.65rem; color: #9ca3af; margin-top: 2px; }
+
+    /* ── OL overrides ── */
+    .ol-zoom {
+      position: absolute !important; top: auto !important; bottom: 1.5rem !important;
+      left: auto !important; right: 1rem !important;
+      background: none !important; padding: 0 !important;
+    }
+    .ol-zoom .ol-zoom-in, .ol-zoom .ol-zoom-out {
+      display: block; background: #fff !important; color: #374151 !important;
+      border-radius: 6px !important; border: 1px solid #e5e7eb !important;
+      width: 2rem !important; height: 2rem !important;
+      line-height: 1.9rem !important; font-size: 1.1rem !important;
+      margin: 2px 0 !important; box-shadow: 0 1px 4px rgba(0,0,0,0.1) !important;
+      cursor: pointer !important;
+    }
+    .ol-zoom .ol-zoom-in:hover, .ol-zoom .ol-zoom-out:hover { background: #f3f4f6 !important; }
+    .ol-attribution { bottom: 0 !important; right: 0 !important; }
+    .ol-attribution button { display: none; }
+    .ol-attribution ul { font-size: 0.6rem; color: #9ca3af; background: rgba(255,255,255,0.8); border-radius: 4px 0 0 0; padding: 2px 6px; margin: 0; }
+    .ol-rotate { display: none; }
+
+    /* ── Basemap switcher ── */
+    #basemap-switcher {
+      position: fixed; top: 1rem; left: 1rem; z-index: 200;
+      display: flex; gap: 2px; background: #fff; border: 1px solid #e5e7eb;
+      border-radius: 7px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); overflow: hidden;
+    }
+    #basemap-switcher button {
+      padding: 0.3rem 0.6rem; border: none; background: none;
+      font-size: 0.7rem; font-weight: 600; color: #9ca3af;
+      cursor: pointer; white-space: nowrap;
+    }
+    #basemap-switcher button.active { background: #1a1a1a; color: #fff; }
+    #basemap-switcher button:not(.active):hover { background: #f3f4f6; color: #374151; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <div id="panel">
+    <div id="panel-header">
+      <a href="../index.html" id="back-link" title="Back to gallery">←</a>
+      <div style="flex:1">
+        <div class="panel-title">📊 Sheet Map</div>
+        <div class="panel-subtitle">Load points from a Google Sheet</div>
+      </div>
+      <button id="minimize-btn" title="Minimize">–</button>
+    </div>
+
+    <div id="panel-body">
+      <div class="field">
+        <label>Google Sheet URL</label>
+        <input type="text" id="sheet-url" placeholder="https://docs.google.com/spreadsheets/d/..." />
+      </div>
+      <div class="field">
+        <label>Sheet name (optional)</label>
+        <input type="text" id="sheet-name" placeholder="Sheet1" />
+      </div>
+      <button class="btn btn-primary" id="load-btn">Load Sheet →</button>
+      <div class="status" id="status"></div>
+      <div class="help-text">
+        <strong>Required columns:</strong> <code>name</code>, <code>lat</code>, <code>lon</code><br>
+        <strong>Optional:</strong> <code>description</code>, <code>category</code>, <code>color</code><br>
+        Sheet must be <strong>public</strong> (Share → Anyone with the link).<br>
+        <a href="https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms/edit?gid=0#gid=0" target="_blank">📄 Example template</a>
+      </div>
+    </div>
+
+    <div id="info-bar">
+      <span>Points: <span class="count" id="point-count">0</span></span>
+      <span>·</span>
+      <span id="cluster-info">Zoom in to see individual points</span>
+    </div>
+  </div>
+
+  <div id="tooltip" class="ol-tooltip" style="display:none"></div>
+
+  <div id="basemap-switcher">
+    <button data-basemap="positron" class="active">Light</button>
+    <button data-basemap="osm">OSM</button>
+    <button data-basemap="topo">Topo</button>
+  </div>
+
+<script>
+// ── Basemaps ──────────────────────────────────────────────────
+const BASEMAPS = {
+  positron: () => new ol.source.XYZ({ url: 'https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', attributions: '© CARTO © OSM', crossOrigin: 'anonymous' }),
+  osm:      () => new ol.source.OSM(),
+  topo:     () => new ol.source.XYZ({ url: 'https://tile.opentopomap.org/{z}/{x}/{y}.png', attributions: '© OpenTopoMap © OSM', crossOrigin: 'anonymous' }),
+}
+
+// ── Map ───────────────────────────────────────────────────────
+const pointSource   = new ol.source.Vector()
+const clusterSource = new ol.source.Cluster({ distance: 45, source: pointSource })
+
+const CATEGORY_COLORS = ['#2563eb', '#059669', '#8b5cf6', '#f59e0b', '#ec4899', '#06b6d4', '#ef4444', '#84cc16']
+let categoryMap = {}
+
+function getCategoryColor(cat) {
+  if (!cat) return '#2563eb'
+  if (categoryMap[cat]) return categoryMap[cat]
+  const idx = Object.keys(categoryMap).length % CATEGORY_COLORS.length
+  categoryMap[cat] = CATEGORY_COLORS[idx]
+  return categoryMap[cat]
+}
+
+const clusterLayer = new ol.layer.Vector({
+  source: clusterSource,
+  style: (feature) => {
+    const features = feature.get('features')
+    const count = features.length
+    if (count === 1) {
+      const f = features[0]
+      const cat  = f.get('category') || ''
+      const col  = f.get('pointColor') || getCategoryColor(cat)
+      return new ol.style.Style({
+        image: new ol.style.Circle({
+          radius: 8,
+          fill: new ol.style.Fill({ color: col }),
+          stroke: new ol.style.Stroke({ color: '#fff', width: 2 }),
+        }),
+      })
+    }
+    // Cluster
+    const radius = 14 + Math.min(count, 50) * 0.3
+    return new ol.style.Style({
+      image: new ol.style.Circle({
+        radius,
+        fill: new ol.style.Fill({ color: '#2563eb' }),
+        stroke: new ol.style.Stroke({ color: '#fff', width: 2.5 }),
+      }),
+      text: new ol.style.Text({
+        text: String(count),
+        font: 'bold 11px sans-serif',
+        fill: new ol.style.Fill({ color: '#fff' }),
+      }),
+    })
+  },
+})
+
+const baseTileLayer = new ol.layer.Tile({ source: BASEMAPS.positron() })
+
+const map = new ol.Map({
+  target: 'map',
+  layers: [baseTileLayer, clusterLayer],
+  view: new ol.View({ center: ol.proj.fromLonLat([110.36, -7.79]), zoom: 2, maxZoom: 18 }),
+})
+
+// ── Basemap switcher ──────────────────────────────────────────
+document.querySelectorAll('#basemap-switcher button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const key = btn.dataset.basemap
+    if (!BASEMAPS[key]) return
+    baseTileLayer.setSource(BASEMAPS[key]())
+    document.querySelectorAll('#basemap-switcher button').forEach(b => b.classList.remove('active'))
+    btn.classList.add('active')
+  })
+})
+
+// ── Tooltip ───────────────────────────────────────────────────
+const tooltipEl = document.getElementById('tooltip')
+const tooltipOverlay = new ol.Overlay({ element: tooltipEl, positioning: 'bottom-center' })
+map.addOverlay(tooltipOverlay)
+
+map.on('pointermove', (e) => {
+  const feature = map.forEachFeatureAtPixel(e.pixel, f => f)
+  if (!feature) { tooltipEl.style.display = 'none'; map.getTargetElement().style.cursor = ''; return }
+
+  const features = feature.get('features')
+  if (!features) { tooltipEl.style.display = 'none'; return }
+
+  map.getTargetElement().style.cursor = 'pointer'
+
+  if (features.length === 1) {
+    const f = features[0]
+    const name = f.get('name') || 'Unnamed'
+    const desc = f.get('description') || ''
+    tooltipEl.innerHTML = `<div class="tt-name">${name}</div>${desc ? `<div class="tt-detail">${desc}</div>` : ''}`
+  } else {
+    tooltipEl.innerHTML = `<div class="tt-name">${features.length} points</div><div class="tt-detail">Zoom in to see details</div>`
+  }
+  tooltipEl.style.display = 'block'
+  tooltipOverlay.setPosition(e.coordinate)
+})
+
+// Click cluster to zoom in
+map.on('click', (e) => {
+  const feature = map.forEachFeatureAtPixel(e.pixel, f => f)
+  if (!feature) return
+  const features = feature.get('features')
+  if (!features || features.length <= 1) return
+  // Zoom to cluster extent
+  const ext = ol.extent.createEmpty()
+  features.forEach(f => ol.extent.extend(ext, f.getGeometry().getExtent()))
+  map.getView().fit(ext, { padding: [80, 80, 80, 80], maxZoom: 17, duration: 500 })
+})
+
+// ── Panel minimize ────────────────────────────────────────────
+const panel = document.getElementById('panel')
+const minBtn = document.getElementById('minimize-btn')
+let minimized = false
+minBtn.addEventListener('click', (e) => {
+  e.stopPropagation()
+  minimized = !minimized
+  panel.classList.toggle('minimized', minimized)
+  minBtn.textContent = minimized ? '▲' : '–'
+})
+
+// ── Sheet loading ─────────────────────────────────────────────
+const statusEl  = document.getElementById('status')
+const loadBtn   = document.getElementById('load-btn')
+const urlInput  = document.getElementById('sheet-url')
+const nameInput = document.getElementById('sheet-name')
+
+function setStatus(msg, type) {
+  statusEl.textContent = msg
+  statusEl.className = 'status' + (type ? ` ${type}` : '')
+}
+
+function extractSheetId(url) {
+  // Extract spreadsheet ID from various Google Sheets URL formats
+  const match = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/)
+  return match ? match[1] : null
+}
+
+function parseCSV(text) {
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
+  if (lines.length < 2) throw new Error('Sheet has no data rows')
+
+  const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/['"]/g, ''))
+  const latIdx  = headers.findIndex(h => h === 'lat' || h === 'latitude')
+  const lonIdx  = headers.findIndex(h => h === 'lon' || h === 'lng' || h === 'longitude')
+  const nameIdx = headers.findIndex(h => h === 'name' || h === 'title')
+  const descIdx = headers.findIndex(h => h === 'description' || h === 'desc')
+  const catIdx  = headers.findIndex(h => h === 'category' || h === 'type')
+  const colIdx  = headers.findIndex(h => h === 'color' || h === 'colour')
+
+  if (latIdx === -1 || lonIdx === -1) throw new Error(`Missing required columns: need 'lat' and 'lon' (found: ${headers.join(', ')})`)
+
+  const points = []
+  for (let i = 1; i < lines.length; i++) {
+    // Simple CSV split (handles basic cases; won't handle quoted commas)
+    const cols = lines[i].split(',').map(c => c.trim().replace(/^["']|["']$/g, ''))
+    const lat = parseFloat(cols[latIdx])
+    const lon = parseFloat(cols[lonIdx])
+    if (isNaN(lat) || isNaN(lon)) continue
+    if (lat < -90 || lat > 90 || lon < -180 || lon > 180) continue
+
+    points.push({
+      name: nameIdx >= 0 ? cols[nameIdx] : `Point ${i}`,
+      lat, lon,
+      description: descIdx >= 0 ? cols[descIdx] : '',
+      category: catIdx >= 0 ? cols[catIdx] : '',
+      color: colIdx >= 0 ? cols[colIdx] : '',
+    })
+  }
+
+  if (points.length === 0) throw new Error('No valid points found (check lat/lon values)')
+  return points
+}
+
+async function loadSheet() {
+  const url = urlInput.value.trim()
+  if (!url) { setStatus('Enter a Google Sheet URL', 'error'); urlInput.classList.add('error'); return }
+  urlInput.classList.remove('error')
+
+  const sheetId = extractSheetId(url)
+  if (!sheetId) { setStatus('Invalid Google Sheets URL', 'error'); urlInput.classList.add('error'); return }
+
+  const sheetName = nameInput.value.trim() || 'Sheet1'
+  const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`
+
+  setStatus('Loading sheet…')
+  loadBtn.disabled = true
+
+  try {
+    const res = await fetch(csvUrl)
+    if (!res.ok) throw new Error(`Failed to fetch sheet (HTTP ${res.status}). Is it public?`)
+    const text = await res.text()
+    const points = parseCSV(text)
+
+    // Reset
+    pointSource.clear()
+    categoryMap = {}
+
+    // Add features
+    points.forEach(pt => {
+      const f = new ol.Feature({
+        geometry: new ol.geom.Point(ol.proj.fromLonLat([pt.lon, pt.lat])),
+        name: pt.name,
+        description: pt.description,
+        category: pt.category,
+        pointColor: pt.color || '',
+      })
+      pointSource.addFeature(f)
+    })
+
+    // Fit view
+    const ext = pointSource.getExtent()
+    if (!ol.extent.isEmpty(ext)) {
+      map.getView().fit(ext, { padding: [80, 80, 120, 80], maxZoom: 15, duration: 600 })
+    }
+
+    document.getElementById('point-count').textContent = points.length
+    document.getElementById('info-bar').style.display = 'flex'
+
+    // Save URL to localStorage for convenience
+    localStorage.setItem('sheet_map_url', url)
+    localStorage.setItem('sheet_map_name', sheetName)
+
+    setStatus(`Loaded ${points.length} points`, 'success')
+  } catch (err) {
+    setStatus(err.message, 'error')
+  } finally {
+    loadBtn.disabled = false
+  }
+}
+
+loadBtn.addEventListener('click', loadSheet)
+urlInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') loadSheet() })
+
+// Restore last URL
+const savedUrl = localStorage.getItem('sheet_map_url')
+const savedName = localStorage.getItem('sheet_map_name')
+if (savedUrl) { urlInput.value = savedUrl; nameInput.value = savedName || '' }
+</script>
+</body>
+</html>

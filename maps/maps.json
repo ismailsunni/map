@@ -1,5 +1,14 @@
 [
   {
+    "id": "sheet-map",
+    "title": "Sheet Map",
+    "description": "Load points from a public Google Sheet and visualize them on a map with clustering. Just paste a URL.",
+    "library": "OpenLayers",
+    "libraryColor": "#059669",
+    "thumbnail": "thumb.png",
+    "tags": ["google-sheets", "csv", "clustering", "pins"]
+  },
+  {
     "id": "route-finder",
     "title": "Route Finder",
     "description": "Find routes and solve TSP across city landmarks. Switch between Yogyakarta and München. Real road distances via pgRouting + Supabase.",
