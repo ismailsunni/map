@@ -169,10 +169,7 @@
         <label>Google Sheet URL</label>
         <input type="text" id="sheet-url" placeholder="https://docs.google.com/spreadsheets/d/..." />
       </div>
-      <div class="field">
-        <label>Sheet tab <span style="font-weight:400;text-transform:none">(comma-separated for multiple)</span></label>
-        <input type="text" id="sheet-name" placeholder="Leave blank for first sheet" />
-      </div>
+      <input type="hidden" id="sheet-name" />
       <div id="sheet-tabs" style="display:none;"></div>
       <button class="btn btn-primary" id="load-btn">Load Sheet →</button>
       <div class="status" id="status"></div>
