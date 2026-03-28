@@ -155,9 +155,9 @@
         <label>Google Sheet URL</label>
         <input type="text" id="sheet-url" placeholder="https://docs.google.com/spreadsheets/d/..." />
       </div>
-      <div class="field">
-        <label>Sheet name (optional)</label>
-        <input type="text" id="sheet-name" placeholder="Sheet1" />
+      <div class="field" id="sheet-name-field" style="display:none">
+        <label>Sheet name (optional — defaults to first sheet)</label>
+        <input type="text" id="sheet-name" placeholder="Leave blank for first sheet" />
       </div>
       <button class="btn btn-primary" id="load-btn">Load Sheet →</button>
       <div class="status" id="status"></div>
@@ -370,8 +370,8 @@ async function loadSheet() {
   const sheetId = extractSheetId(url)
   if (!sheetId) { setStatus('Invalid Google Sheets URL', 'error'); urlInput.classList.add('error'); return }
 
-  const sheetName = nameInput.value.trim() || 'Sheet1'
-  const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`
+  const sheetName = nameInput.value.trim()
+  const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv${sheetName ? `&sheet=${encodeURIComponent(sheetName)}` : ''}`
 
   setStatus('Loading sheet…')
   loadBtn.disabled = true
