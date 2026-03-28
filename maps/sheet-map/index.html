@@ -169,9 +169,12 @@
         <label>Google Sheet URL</label>
         <input type="text" id="sheet-url" placeholder="https://docs.google.com/spreadsheets/d/..." />
       </div>
+      <div class="field">
+        <label>Sheet tab <span style="font-weight:400;text-transform:none">(comma-separated for multiple)</span></label>
+        <input type="text" id="sheet-name" placeholder="Leave blank for first sheet" />
+      </div>
       <div id="sheet-tabs" style="display:none;"></div>
       <button class="btn btn-primary" id="load-btn">Load Sheet →</button>
-      <input type="hidden" id="sheet-name" />
       <div class="status" id="status"></div>
       <div class="help-text">
         <strong>Required columns:</strong> <code>name</code>, <code>lat</code>, <code>lon</code><br>
@@ -375,72 +378,15 @@ function parseCSV(text) {
 }
 
 let currentSheetId = null
-let discoveredSheets = []  // [{name, gid}]
-
-// Discover sheet names by probing the gviz JSON endpoint
-// Google embeds sheet tabs in the response when using tqx=out:json
-async function discoverSheets(sheetId) {
-  const tabsEl = document.getElementById('sheet-tabs')
-
-  // We can't enumerate sheets without API key. Instead, we'll fetch
-  // the HTML page and extract sheet names from the embedded data.
-  // Fallback: just try loading and let user type names if needed.
-  try {
-    // Fetch the edit page — it contains sheet names in the HTML
-    const res = await fetch(`https://docs.google.com/spreadsheets/d/${sheetId}/edit?usp=sharing`, { redirect: 'follow' })
-    const html = await res.text()
-
-    // Extract sheet names from the ritz bootstrap data
-    // Pattern: [null,null,null,"SheetName",gid,...] in the page source
-    const sheets = []
-    const regex = /\[(?:null,){3}"([^"]+)",(\d+)/g
-    let match
-    while ((match = regex.exec(html)) !== null) {
-      const name = match[1]
-      const gid = match[2]
-      // Filter out false positives (very long strings, duplicates)
-      if (name.length < 100 && !sheets.find(s => s.gid === gid)) {
-        sheets.push({ name, gid })
-      }
-    }
-
-    if (sheets.length > 0) {
-      discoveredSheets = sheets
-    } else {
-      // Fallback: just use first sheet
-      discoveredSheets = [{ name: 'Sheet1', gid: '0' }]
-    }
-  } catch {
-    discoveredSheets = [{ name: 'Sheet1', gid: '0' }]
-  }
-
-  // Render tabs
-  if (discoveredSheets.length > 1) {
-    tabsEl.innerHTML = discoveredSheets.map((s, i) =>
-      `<button class="sheet-tab${i === 0 ? ' active' : ''}" data-name="${s.name}" data-gid="${s.gid}">${s.name}</button>`
-    ).join('')
-    tabsEl.style.display = 'flex'
-    tabsEl.querySelectorAll('.sheet-tab').forEach(btn => {
-      btn.addEventListener('click', () => {
-        tabsEl.querySelectorAll('.sheet-tab').forEach(b => b.classList.remove('active'))
-        btn.classList.add('active')
-        nameInput.value = btn.dataset.name
-        loadSheetData(sheetId, btn.dataset.name)
-      })
-    })
-  } else {
-    tabsEl.style.display = 'none'
-  }
-}
+let sheetNames = []  // parsed from input
+let activeSheet = ''
 
 async function loadSheetData(sheetId, sheetName) {
   const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv${sheetName ? `&sheet=${encodeURIComponent(sheetName)}` : ''}`
-
   setStatus('Loading…')
-
   try {
     const res = await fetch(csvUrl)
-    if (!res.ok) throw new Error(`Failed to fetch sheet (HTTP ${res.status}). Is it public?`)
+    if (!res.ok) throw new Error(`Failed to fetch (HTTP ${res.status}). Is the sheet public?`)
     const text = await res.text()
     const points = parseCSV(text)
 
@@ -450,25 +396,37 @@ async function loadSheetData(sheetId, sheetName) {
     points.forEach(pt => {
       const f = new ol.Feature({
         geometry: new ol.geom.Point(ol.proj.fromLonLat([pt.lon, pt.lat])),
-        name: pt.name,
-        description: pt.description,
-        category: pt.category,
-        pointColor: pt.color || '',
+        name: pt.name, description: pt.description,
+        category: pt.category, pointColor: pt.color || '',
       })
       pointSource.addFeature(f)
     })
 
     const ext = pointSource.getExtent()
-    if (!ol.extent.isEmpty(ext)) {
-      map.getView().fit(ext, { padding: [80, 80, 120, 80], maxZoom: 15, duration: 600 })
-    }
+    if (!ol.extent.isEmpty(ext)) map.getView().fit(ext, { padding: [80, 80, 120, 80], maxZoom: 15, duration: 600 })
 
     document.getElementById('point-count').textContent = points.length
     document.getElementById('info-bar').style.display = 'flex'
-    setStatus(`Loaded ${points.length} points`, 'success')
-  } catch (err) {
-    setStatus(err.message, 'error')
-  }
+    activeSheet = sheetName
+    setStatus(`Loaded ${points.length} points${sheetName ? ` from "${sheetName}"` : ''}`, 'success')
+  } catch (err) { setStatus(err.message, 'error') }
+}
+
+function renderTabs() {
+  const tabsEl = document.getElementById('sheet-tabs')
+  if (sheetNames.length <= 1) { tabsEl.style.display = 'none'; return }
+  tabsEl.innerHTML = sheetNames.map(name =>
+    `<button class="sheet-tab${name === activeSheet ? ' active' : ''}" data-name="${name}">${name}</button>`
+  ).join('')
+  tabsEl.style.display = 'flex'
+  tabsEl.querySelectorAll('.sheet-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (!currentSheetId) return
+      tabsEl.querySelectorAll('.sheet-tab').forEach(b => b.classList.remove('active'))
+      btn.classList.add('active')
+      loadSheetData(currentSheetId, btn.dataset.name)
+    })
+  })
 }
 
 async function loadSheet() {
@@ -483,13 +441,14 @@ async function loadSheet() {
   currentSheetId = sheetId
   localStorage.setItem('sheet_map_url', url)
 
-  setStatus('Discovering sheets…')
-  await discoverSheets(sheetId)
+  // Parse sheet names from input (comma-separated)
+  const raw = nameInput.value.trim()
+  sheetNames = raw ? raw.split(',').map(s => s.trim()).filter(Boolean) : ['']
+  localStorage.setItem('sheet_map_names', raw)
 
   // Load first sheet
-  const firstName = discoveredSheets[0]?.name || ''
-  nameInput.value = firstName
-  await loadSheetData(sheetId, firstName)
+  await loadSheetData(sheetId, sheetNames[0])
+  renderTabs()
   loadBtn.disabled = false
 }
 
@@ -498,7 +457,8 @@ urlInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') loadSheet()
 
 // Restore or use example
 const savedUrl = localStorage.getItem('sheet_map_url')
-if (savedUrl) { urlInput.value = savedUrl }
+const savedNames = localStorage.getItem('sheet_map_names')
+if (savedUrl) { urlInput.value = savedUrl; nameInput.value = savedNames || '' }
 else { urlInput.value = 'https://docs.google.com/spreadsheets/d/1TiZDXj0TBgd0nRXMElFJpEG2RJwKmVjYXAVubpWwSG0/edit' }
 
 loadSheet()
