@@ -164,7 +164,7 @@
   <p>Fetching earthquake data…</p>
 </div>
 
-<a class="back-btn" href="../../index.html">← Gallery</a>
+<a class="back-btn" href="../index.html">← Gallery</a>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
@@ -175,10 +175,26 @@
     zoomControl: true,
   });
 
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    attribution: '© OpenStreetMap, © CARTO',
-    maxZoom: 18,
-  }).addTo(map);
+  const basemaps = {
+    '🌑 Dark': L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '© OpenStreetMap, © CARTO', maxZoom: 18
+    }),
+    '🌍 OSM': L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors', maxZoom: 19
+    }),
+    '☀️ Light': L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '© OpenStreetMap, © CARTO', maxZoom: 18
+    }),
+    '🛰️ Satellite': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: '© Esri', maxZoom: 18
+    }),
+    '🗺️ Toner': L.tileLayer('https://tiles.stadiamaps.com/tiles/stamen_toner/{z}/{x}/{y}{r}.png', {
+      attribution: '© Stadia Maps, © Stamen Design, © OpenStreetMap', maxZoom: 20
+    }),
+  };
+
+  basemaps['🌑 Dark'].addTo(map);
+  L.control.layers(basemaps, {}, { position: 'topleft', collapsed: false }).addTo(map);
 
   let heatLayer = null;
   let dotLayer = null;
