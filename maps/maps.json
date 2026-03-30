@@ -45,6 +45,15 @@
     "tags": ["vector", "tiles", "gl"]
   },
   {
+    "id": "leaflet-earthquakes",
+    "title": "Earthquake Heatmap",
+    "description": "Live global earthquake heatmap powered by USGS data. Filter by time period and magnitude, switch between heatmap and dot view.",
+    "library": "Leaflet",
+    "libraryColor": "#1a9850",
+    "thumbnail": "thumb.png",
+    "tags": ["heatmap", "leaflet", "earthquake", "usgs", "realtime"]
+  },
+  {
     "id": "cesium-globe",
     "title": "3D Globe",
     "description": "An interactive 3D globe using CesiumJS. Rotate and zoom the entire Earth.",
