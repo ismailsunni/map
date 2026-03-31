@@ -252,17 +252,12 @@
     #basemap-switcher button.active { background: #1a1a1a; color: #fff; }
     #basemap-switcher button:not(.active):hover { background: #f3f4f6; color: #374151; }
 
-    /* Desktop: basemap switcher inside sidebar at bottom */
+    /* Desktop: basemap switcher floats bottom-left of map area */
     @media (min-width: 640px) {
       #basemap-switcher {
-        position: static;
-        top: auto; left: auto;
-        border-radius: 0;
-        border: none;
-        border-top: 1px solid #e5e7eb;
-        box-shadow: none;
-        padding: 0.5rem 0.75rem;
-        justify-content: center;
+        left: calc(320px + 1rem);
+        bottom: 1rem;
+        top: auto;
       }
     }
 
@@ -346,14 +341,15 @@
   <div id="tooltip" class="ol-tooltip" style="display:none"></div>
 
   </div><!-- /#panel -->
+  </div><!-- /#sidebar -->
+
+  <div id="map"></div>
+
   <div id="basemap-switcher">
     <button data-basemap="positron" class="active">Light</button>
     <button data-basemap="osm">OSM</button>
     <button data-basemap="topo">Topo</button>
   </div>
-  </div><!-- /#sidebar -->
-
-  <div id="map"></div>
 
   <script>
     const aboutModal = document.getElementById('about-modal')
