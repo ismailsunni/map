@@ -9,7 +9,12 @@
     *, *::before, *::after { box-sizing: border-box; }
     html, body { height: 100%; margin: 0; font-family: 'Segoe UI', system-ui, sans-serif; background: #0d1117; }
 
-    #map { width: 100%; height: 100%; }
+    #map-left, #map-right {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
 
     /* ── Panel ── */
     #panel {
@@ -142,7 +147,7 @@
     }
 
     /* OL overrides */
-    .ol-zoom { bottom: 2rem !important; top: auto !important; right: 1rem !important; left: auto !important; }
+    .ol-zoom { bottom: 2rem !important; top: auto !important; left: 1rem !important; right: auto !important; }
     .ol-attribution { bottom: 1.5rem !important; }
     .ol-attribution ul { font-size: 0.6rem; }
     .ol-rotate { display: none; }
@@ -150,7 +155,8 @@
 </head>
 <body>
 
-<div id="map"></div>
+<div id="map-left"></div>
+<div id="map-right" style="display:none"></div>
 
 <div id="panel">
   <div id="panel-header">
