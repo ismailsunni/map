@@ -24,6 +24,9 @@ const BASEMAPS = [
         url: 'https://{a-c}.tile.openstreetmap.org/{z}/{x}/{y}.png',
         attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> contributors',
         thumb: 'https://tile.openstreetmap.org/5/16/10.png',
+        description: 'The free, editable map of the world built by volunteers. Great for general purpose mapping.',
+        tags: ['free', 'open source', 'street'],
+        link: 'https://openstreetmap.org',
       },
       {
         id: 'carto-light',
@@ -32,6 +35,9 @@ const BASEMAPS = [
         url: 'https://{a-d}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
         attribution: '© <a href="https://carto.com">CARTO</a> | © OSM',
         thumb: 'https://a.basemaps.cartocdn.com/light_all/5/16/10.png',
+        description: 'A clean, minimal light basemap from CARTO. Perfect for data overlays where the map should not distract.',
+        tags: ['minimal', 'light', 'data viz'],
+        link: 'https://carto.com/basemaps/',
       },
       {
         id: 'carto-dark',
@@ -40,6 +46,9 @@ const BASEMAPS = [
         url: 'https://{a-d}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
         attribution: '© <a href="https://carto.com">CARTO</a> | © OSM',
         thumb: 'https://a.basemaps.cartocdn.com/dark_all/5/16/10.png',
+        description: 'CARTO dark basemap. Ideal for vibrant data overlays on a dark background.',
+        tags: ['dark', 'dramatic', 'data viz'],
+        link: 'https://carto.com/basemaps/',
       },
       {
         id: 'carto-voyager',
@@ -48,6 +57,9 @@ const BASEMAPS = [
         url: 'https://{a-d}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
         attribution: '© <a href="https://carto.com">CARTO</a> | © OSM',
         thumb: 'https://a.basemaps.cartocdn.com/rastertiles/voyager/5/16/10.png',
+        description: 'A modern, colorful basemap with a fresh look. Good balance between style and detail.',
+        tags: ['colorful', 'modern', 'street'],
+        link: 'https://carto.com/basemaps/',
       },
       {
         id: 'carto-light-nolabels',
@@ -56,6 +68,9 @@ const BASEMAPS = [
         url: 'https://{a-d}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png',
         attribution: '© <a href="https://carto.com">CARTO</a> | © OSM',
         thumb: 'https://a.basemaps.cartocdn.com/light_nolabels/5/16/10.png',
+        description: 'Positron without text labels. Use when you want to add your own labels or keep things clean.',
+        tags: ['minimal', 'no labels', 'base layer'],
+        link: 'https://carto.com/basemaps/',
       },
       {
         id: 'carto-dark-nolabels',
@@ -64,6 +79,9 @@ const BASEMAPS = [
         url: 'https://{a-d}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png',
         attribution: '© <a href="https://carto.com">CARTO</a> | © OSM',
         thumb: 'https://a.basemaps.cartocdn.com/dark_nolabels/5/16/10.png',
+        description: 'Dark Matter without labels. Great base for custom label overlays.',
+        tags: ['dark', 'no labels', 'base layer'],
+        link: 'https://carto.com/basemaps/',
       },
     ]
   },
@@ -77,6 +95,9 @@ const BASEMAPS = [
         url: 'https://{a-c}.tile.opentopomap.org/{z}/{x}/{y}.png',
         attribution: '© <a href="https://opentopomap.org">OpenTopoMap</a> | © OSM',
         thumb: 'https://a.tile.opentopomap.org/5/16/10.png',
+        description: 'Topographic map with contour lines, elevation shading, and hiking trails. Great for outdoor navigation.',
+        tags: ['terrain', 'elevation', 'hiking'],
+        link: 'https://opentopomap.org',
       },
       {
         id: 'stadia-outdoors',
@@ -85,6 +106,9 @@ const BASEMAPS = [
         url: stadiaUrl('outdoors', 'png'),
         attribution: '© <a href="https://stadiamaps.com">Stadia Maps</a> | © OSM',
         thumb: stadiaThumb('outdoors', 'png'),
+        description: 'Stadia Maps outdoor style with path, trail, and terrain detail. Excellent for hiking and cycling.',
+        tags: ['outdoor', 'trails', 'terrain'],
+        link: 'https://stadiamaps.com/tiles/outdoors/',
       },
       {
         id: 'stadia-alidade-smooth',
@@ -93,6 +117,9 @@ const BASEMAPS = [
         url: stadiaUrl('alidade_smooth', 'png'),
         attribution: '© <a href="https://stadiamaps.com">Stadia Maps</a> | © OSM',
         thumb: stadiaThumb('alidade_smooth', 'png'),
+        description: 'A smooth, light style by Stadia Maps with subtle detail. Professional and clean.',
+        tags: ['light', 'smooth', 'minimal'],
+        link: 'https://stadiamaps.com/tiles/alidade_smooth/',
       },
       {
         id: 'stadia-alidade-smooth-dark',
@@ -101,6 +128,9 @@ const BASEMAPS = [
         url: stadiaUrl('alidade_smooth_dark', 'png'),
         attribution: '© <a href="https://stadiamaps.com">Stadia Maps</a> | © OSM',
         thumb: stadiaThumb('alidade_smooth_dark', 'png'),
+        description: 'Dark variant of Alidade Smooth. Sophisticated dark style for dashboards and apps.',
+        tags: ['dark', 'smooth', 'professional'],
+        link: 'https://stadiamaps.com/tiles/alidade_smooth_dark/',
       },
     ]
   },
@@ -114,6 +144,9 @@ const BASEMAPS = [
         url: stadiaUrl('stamen_watercolor', 'jpg'),
         attribution: '© <a href="https://stadiamaps.com">Stadia</a> | © <a href="https://stamen.com">Stamen</a>',
         thumb: stadiaThumb('stamen_watercolor', 'jpg'),
+        description: 'A hand-painted watercolor art style by Stamen/Stadia. Artistic and unique, originally created in 2012.',
+        tags: ['artistic', 'watercolor', 'creative'],
+        link: 'https://stamen.com/watercolor/',
       },
       {
         id: 'stadia-toner',
@@ -122,6 +155,9 @@ const BASEMAPS = [
         url: stadiaUrl('stamen_toner', 'png'),
         attribution: '© <a href="https://stadiamaps.com">Stadia</a> | © <a href="https://stamen.com">Stamen</a>',
         thumb: stadiaThumb('stamen_toner', 'png'),
+        description: 'Bold black-and-white ink style by Stamen/Stadia. High contrast, graphic, and striking.',
+        tags: ['artistic', 'B&W', 'high contrast'],
+        link: 'https://stamen.com/toner/',
       },
       {
         id: 'stadia-toner-lite',
@@ -130,6 +166,9 @@ const BASEMAPS = [
         url: stadiaUrl('stamen_toner_lite', 'png'),
         attribution: '© <a href="https://stadiamaps.com">Stadia</a> | © <a href="https://stamen.com">Stamen</a>',
         thumb: stadiaThumb('stamen_toner_lite', 'png'),
+        description: 'Lighter version of Toner — same B&W ink style but softer, less overwhelming.',
+        tags: ['artistic', 'B&W', 'subtle'],
+        link: 'https://stamen.com/toner/',
       },
       {
         id: 'stadia-osm-bright',
@@ -138,6 +177,9 @@ const BASEMAPS = [
         url: stadiaUrl('osm_bright', 'png'),
         attribution: '© <a href="https://stadiamaps.com">Stadia Maps</a> | © OSM',
         thumb: stadiaThumb('osm_bright', 'png'),
+        description: 'A bright, vibrant OSM-based style by Stadia Maps. Colorful and easy to read.',
+        tags: ['bright', 'colorful', 'street'],
+        link: 'https://stadiamaps.com/tiles/osm_bright/',
       },
     ]
   },
@@ -151,6 +193,9 @@ const BASEMAPS = [
         url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
         attribution: '© <a href="https://esri.com">Esri</a> | © Various',
         thumb: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/5/10/16',
+        description: 'High-resolution satellite and aerial imagery from ESRI. Shows real-world land cover and terrain.',
+        tags: ['satellite', 'imagery', 'aerial'],
+        link: 'https://www.arcgis.com/home/item.html?id=10df2279f9684e4a9f6a7f08febac2a9',
       },
       {
         id: 'esri-streets',
@@ -159,6 +204,9 @@ const BASEMAPS = [
         url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
         attribution: '© <a href="https://esri.com">Esri</a>',
         thumb: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/5/10/16',
+        description: 'ESRI World Street Map. Detailed street-level mapping with rich cartographic styling.',
+        tags: ['street', 'detailed', 'reference'],
+        link: 'https://www.arcgis.com/home/item.html?id=3b93337983e9436f8db950e38a8629af',
       },
       {
         id: 'esri-natgeo',
@@ -167,6 +215,9 @@ const BASEMAPS = [
         url: 'https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}',
         attribution: '© <a href="https://esri.com">Esri</a> | National Geographic',
         thumb: 'https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/5/10/16',
+        description: 'National Geographic style map by ESRI. Classic cartographic style resembling NatGeo atlas maps.',
+        tags: ['classic', 'atlas', 'national geographic'],
+        link: 'https://www.arcgis.com/home/item.html?id=b9b1b422198944fbbd5250b3241691b6',
       },
     ]
   },
@@ -180,6 +231,9 @@ const BASEMAPS = [
         url: 'https://{a-c}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png',
         attribution: '© <a href="https://www.cyclosm.org">CyclOSM</a> | © OSM contributors',
         thumb: 'https://a.tile-cyclosm.openstreetmap.fr/cyclosm/5/16/10.png',
+        description: 'Cycling-focused OSM map showing bike routes, elevation, and cycle infrastructure in detail.',
+        tags: ['cycling', 'bike', 'OSM'],
+        link: 'https://www.cyclosm.org',
       },
       {
         id: 'osm-humanitarian',
@@ -188,6 +242,9 @@ const BASEMAPS = [
         url: 'https://tile-a.openstreetmap.fr/hot/{z}/{x}/{y}.png',
         attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> contributors | HOT',
         thumb: 'https://tile-a.openstreetmap.fr/hot/5/16/10.png',
+        description: 'Humanitarian map style by OpenStreetMap and HOT (Humanitarian OpenStreetMap Team). Used in disaster response.',
+        tags: ['humanitarian', 'HOT', 'disaster response'],
+        link: 'https://www.hotosm.org',
       },
     ]
   },
@@ -224,6 +281,7 @@ let compareMode = false
 let activeId = null   // left panel selection
 let compareId = null  // right panel selection
 let sliderX = window.innerWidth / 2
+let infoPanelVisible = false
 
 // ── CSS clip-path helpers ──
 function applyClipPaths() {
@@ -249,8 +307,45 @@ function updateSliderPosition() {
   if (compareMode) applyClipPaths()
 }
 
+// ── Info panel ──
+const infoPanelEl = document.getElementById('info-panel')
+const infoThumbEl = document.getElementById('info-thumb')
+const infoNameEl = document.getElementById('info-name')
+const infoProviderEl = document.getElementById('info-provider')
+const infoTagsEl = document.getElementById('info-tags')
+const infoDescEl = document.getElementById('info-desc')
+const infoLinkEl = document.getElementById('info-link')
+
+document.getElementById('info-close').addEventListener('click', hideInfoPanel)
+
+function showInfoPanel(bm) {
+  infoThumbEl.src = bm.thumb
+  infoThumbEl.onerror = () => { infoThumbEl.parentElement.style.background = '#e5e7eb' }
+  infoNameEl.textContent = bm.name
+  infoProviderEl.textContent = bm.provider
+  infoTagsEl.innerHTML = (bm.tags || []).map(t => `<span class="info-tag">${t}</span>`).join('')
+  infoDescEl.textContent = bm.description || ''
+  infoLinkEl.href = bm.link || '#'
+  infoPanelEl.classList.add('visible')
+  infoPanelVisible = true
+}
+
+function hideInfoPanel() {
+  infoPanelEl.classList.remove('visible')
+  infoPanelVisible = false
+}
+
+function toggleInfoPanel(bm) {
+  if (infoPanelVisible) {
+    hideInfoPanel()
+  } else {
+    showInfoPanel(bm)
+  }
+}
+
 // ── Switch left basemap ──
 function switchLeftBasemap(bm) {
+  const alreadyActive = bm.id === activeId
   Object.values(layersLeft).forEach(l => l.setVisible(false))
   getOrCreateLayer(mapLeft, layersLeft, bm).setVisible(true)
   activeId = bm.id
@@ -258,15 +353,26 @@ function switchLeftBasemap(bm) {
   document.getElementById('active-name').textContent = `${bm.name} · ${bm.provider}`
   document.getElementById('active-attribution').innerHTML = bm.attribution
   mapLeft.render()
+  if (alreadyActive) {
+    toggleInfoPanel(bm)
+  } else {
+    showInfoPanel(bm)
+  }
 }
 
 // ── Switch right basemap ──
 function switchRightBasemap(bm) {
+  const alreadyActive = bm.id === compareId
   Object.values(layersRight).forEach(l => l.setVisible(false))
   getOrCreateLayer(mapRight, layersRight, bm).setVisible(true)
   compareId = bm.id
   rightPanel.setActive(bm.id)
   mapRight.render()
+  if (alreadyActive) {
+    toggleInfoPanel(bm)
+  } else {
+    showInfoPanel(bm)
+  }
 }
 
 // ── Enter / exit compare mode ──
@@ -278,6 +384,7 @@ function enterCompareMode() {
   compareMode = true
   compareBtn.classList.add('active')
   panelTitleEl.textContent = '◀ Left'
+  infoPanelEl.classList.add('compare')
 
   sliderX = window.innerWidth / 2
   sliderEl.style.display = ''
@@ -289,7 +396,12 @@ function enterCompareMode() {
   // Pick a random basemap different from left
   const candidates = allBasemaps.filter(bm => bm.id !== activeId)
   const compareBm = candidates[Math.floor(Math.random() * candidates.length)]
-  switchRightBasemap(compareBm)
+  // Switch without triggering info panel toggle logic (compareId is null)
+  Object.values(layersRight).forEach(l => l.setVisible(false))
+  getOrCreateLayer(mapRight, layersRight, compareBm).setVisible(true)
+  compareId = compareBm.id
+  rightPanel.setActive(compareBm.id)
+  mapRight.render()
 
   panelRightEl.style.display = ''
   applyClipPaths()
@@ -299,6 +411,7 @@ function exitCompareMode() {
   compareMode = false
   compareBtn.classList.remove('active')
   panelTitleEl.textContent = '🗺️ Basemap Explorer'
+  infoPanelEl.classList.remove('compare')
 
   sliderEl.style.display = 'none'
   clearClipPaths()
