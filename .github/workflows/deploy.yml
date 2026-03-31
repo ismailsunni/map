@@ -33,6 +33,8 @@ jobs:
 
       - name: Build all maps
         run: npm run build
+        env:
+          VITE_STADIA_API_KEY: ${{ secrets.VITE_STADIA_API_KEY }}
 
       - uses: actions/configure-pages@v4
 

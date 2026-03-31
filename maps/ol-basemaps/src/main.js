@@ -1,4 +1,11 @@
 import 'ol/ol.css'
+
+const STADIA_KEY = import.meta.env.VITE_STADIA_API_KEY || ''
+const stadiaUrl = (style, ext = 'png') =>
+  `https://tiles.stadiamaps.com/tiles/${style}/{z}/{x}/{y}.${ext}${STADIA_KEY ? `?api_key=${STADIA_KEY}` : ''}`
+const stadiaThumb = (style, ext = 'png') =>
+  `https://tiles.stadiamaps.com/tiles/${style}/5/16/10.${ext}${STADIA_KEY ? `?api_key=${STADIA_KEY}` : ''}`
+
 import Map from 'ol/Map'
 import View from 'ol/View'
 import TileLayer from 'ol/layer/Tile'
@@ -75,25 +82,25 @@ const BASEMAPS = [
         id: 'stadia-outdoors',
         name: 'Outdoors',
         provider: 'Stadia',
-        url: 'https://tiles.stadiamaps.com/tiles/outdoors/{z}/{x}/{y}.png',
+        url: stadiaUrl('outdoors', 'png'),
         attribution: '© <a href="https://stadiamaps.com">Stadia Maps</a> | © OSM',
-        thumb: 'https://tiles.stadiamaps.com/tiles/outdoors/5/16/10.png',
+        thumb: stadiaThumb('outdoors', 'png'),
       },
       {
         id: 'stadia-alidade-smooth',
         name: 'Alidade Smooth',
         provider: 'Stadia',
-        url: 'https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}.png',
+        url: stadiaUrl('alidade_smooth', 'png'),
         attribution: '© <a href="https://stadiamaps.com">Stadia Maps</a> | © OSM',
-        thumb: 'https://tiles.stadiamaps.com/tiles/alidade_smooth/5/16/10.png',
+        thumb: stadiaThumb('alidade_smooth', 'png'),
       },
       {
         id: 'stadia-alidade-smooth-dark',
         name: 'Alidade Smooth Dark',
         provider: 'Stadia',
-        url: 'https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}.png',
+        url: stadiaUrl('alidade_smooth_dark', 'png'),
         attribution: '© <a href="https://stadiamaps.com">Stadia Maps</a> | © OSM',
-        thumb: 'https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/5/16/10.png',
+        thumb: stadiaThumb('alidade_smooth_dark', 'png'),
       },
     ]
   },
@@ -104,33 +111,33 @@ const BASEMAPS = [
         id: 'stadia-watercolor',
         name: 'Watercolor',
         provider: 'Stadia / Stamen',
-        url: 'https://tiles.stadiamaps.com/tiles/stamen_watercolor/{z}/{x}/{y}.jpg',
+        url: stadiaUrl('stamen_watercolor', 'jpg'),
         attribution: '© <a href="https://stadiamaps.com">Stadia</a> | © <a href="https://stamen.com">Stamen</a>',
-        thumb: 'https://tiles.stadiamaps.com/tiles/stamen_watercolor/5/16/10.jpg',
+        thumb: stadiaThumb('stamen_watercolor', 'jpg'),
       },
       {
         id: 'stadia-toner',
         name: 'Toner',
         provider: 'Stadia / Stamen',
-        url: 'https://tiles.stadiamaps.com/tiles/stamen_toner/{z}/{x}/{y}.png',
+        url: stadiaUrl('stamen_toner', 'png'),
         attribution: '© <a href="https://stadiamaps.com">Stadia</a> | © <a href="https://stamen.com">Stamen</a>',
-        thumb: 'https://tiles.stadiamaps.com/tiles/stamen_toner/5/16/10.png',
+        thumb: stadiaThumb('stamen_toner', 'png'),
       },
       {
         id: 'stadia-toner-lite',
         name: 'Toner Lite',
         provider: 'Stadia / Stamen',
-        url: 'https://tiles.stadiamaps.com/tiles/stamen_toner_lite/{z}/{x}/{y}.png',
+        url: stadiaUrl('stamen_toner_lite', 'png'),
         attribution: '© <a href="https://stadiamaps.com">Stadia</a> | © <a href="https://stamen.com">Stamen</a>',
-        thumb: 'https://tiles.stadiamaps.com/tiles/stamen_toner_lite/5/16/10.png',
+        thumb: stadiaThumb('stamen_toner_lite', 'png'),
       },
       {
         id: 'stadia-osm-bright',
         name: 'OSM Bright',
         provider: 'Stadia',
-        url: 'https://tiles.stadiamaps.com/tiles/osm_bright/{z}/{x}/{y}.png',
+        url: stadiaUrl('osm_bright', 'png'),
         attribution: '© <a href="https://stadiamaps.com">Stadia Maps</a> | © OSM',
-        thumb: 'https://tiles.stadiamaps.com/tiles/osm_bright/5/16/10.png',
+        thumb: stadiaThumb('osm_bright', 'png'),
       },
     ]
   },
@@ -188,7 +195,6 @@ const BASEMAPS = [
 
 // ── Flat list helper ──
 const allBasemaps = BASEMAPS.flatMap(c => c.maps)
-function getBmById(id) { return allBasemaps.find(b => b.id === id) }
 
 // ── Two OL maps sharing the same View ──
 const view = new View({ center: fromLonLat([0, 20]), zoom: 2 })
@@ -213,11 +219,11 @@ function getOrCreateLayer(mapInst, registry, bm) {
   return layer
 }
 
-// ── Compare state ──
+// ── State ──
 let compareMode = false
-let compareId = null
+let activeId = null   // left panel selection
+let compareId = null  // right panel selection
 let sliderX = window.innerWidth / 2
-let activeId = null
 
 // ── CSS clip-path helpers ──
 function applyClipPaths() {
@@ -234,7 +240,7 @@ function clearClipPaths() {
   mapRightEl.style.clipPath = ''
 }
 
-// ── Slider element ──
+// ── Slider ──
 const sliderEl = document.getElementById('compare-slider')
 const sliderHandle = document.getElementById('compare-handle')
 
@@ -243,112 +249,68 @@ function updateSliderPosition() {
   if (compareMode) applyClipPaths()
 }
 
-// ── Compare label ──
-function updateCompareLabel(compareName) {
-  document.querySelectorAll('.bm-vs').forEach(el => {
-    el.textContent = ''
-    el.style.display = 'none'
-  })
-  if (compareName) {
-    const activeBtn = document.querySelector('.bm-btn.active')
-    if (activeBtn) {
-      const vsEl = activeBtn.querySelector('.bm-vs')
-      if (vsEl) {
-        vsEl.textContent = `vs ${compareName}`
-        vsEl.style.display = ''
-      }
-    }
-  }
-}
-
-// ── Switch basemap ──
-function switchBasemap(bm) {
-  if (compareMode) {
-    const oldPrimaryId = activeId
-
-    // New primary = clicked; new compare = old primary
-    activeId = bm.id
-    compareId = oldPrimaryId
-
-    // Update mapLeft (primary)
-    Object.values(layersLeft).forEach(l => l.setVisible(false))
-    getOrCreateLayer(mapLeft, layersLeft, bm).setVisible(true)
-
-    // Update mapRight (compare)
-    const compareBm = getBmById(compareId)
-    Object.values(layersRight).forEach(l => l.setVisible(false))
-    getOrCreateLayer(mapRight, layersRight, compareBm).setVisible(true)
-
-    document.querySelectorAll('.bm-btn').forEach(b => b.classList.remove('active'))
-    const btn = document.querySelector(`.bm-btn[data-id="${bm.id}"]`)
-    if (btn) btn.classList.add('active')
-
-    document.getElementById('active-name').textContent = `${bm.name} · ${bm.provider}`
-    document.getElementById('active-attribution').innerHTML = bm.attribution
-
-    updateCompareLabel(compareBm.name)
-    mapLeft.render()
-    mapRight.render()
-    return
-  }
-
-  // Normal mode
+// ── Switch left basemap ──
+function switchLeftBasemap(bm) {
   Object.values(layersLeft).forEach(l => l.setVisible(false))
   getOrCreateLayer(mapLeft, layersLeft, bm).setVisible(true)
   activeId = bm.id
-
-  document.querySelectorAll('.bm-btn').forEach(b => b.classList.remove('active'))
-  const btn = document.querySelector(`.bm-btn[data-id="${bm.id}"]`)
-  if (btn) btn.classList.add('active')
-
+  leftPanel.setActive(bm.id)
   document.getElementById('active-name').textContent = `${bm.name} · ${bm.provider}`
   document.getElementById('active-attribution').innerHTML = bm.attribution
+  mapLeft.render()
+}
+
+// ── Switch right basemap ──
+function switchRightBasemap(bm) {
+  Object.values(layersRight).forEach(l => l.setVisible(false))
+  getOrCreateLayer(mapRight, layersRight, bm).setVisible(true)
+  compareId = bm.id
+  rightPanel.setActive(bm.id)
+  mapRight.render()
 }
 
 // ── Enter / exit compare mode ──
+const panelRightEl = document.getElementById('panel-right')
+const panelTitleEl = document.getElementById('panel-title')
+const compareBtn = document.getElementById('compare-btn')
+
 function enterCompareMode() {
   compareMode = true
   compareBtn.classList.add('active')
+  panelTitleEl.textContent = '◀ Left'
 
   sliderX = window.innerWidth / 2
   sliderEl.style.display = ''
   updateSliderPosition()
 
-  // Pick a random compare basemap different from current primary
-  const candidates = allBasemaps.filter(bm => bm.id !== activeId)
-  const compareBm = candidates[Math.floor(Math.random() * candidates.length)]
-  compareId = compareBm.id
-
-  // Show mapRight and load compare basemap into it
   mapRightEl.style.display = ''
   mapRight.updateSize()
-  Object.values(layersRight).forEach(l => l.setVisible(false))
-  getOrCreateLayer(mapRight, layersRight, compareBm).setVisible(true)
 
-  // Apply clip paths
+  // Pick a random basemap different from left
+  const candidates = allBasemaps.filter(bm => bm.id !== activeId)
+  const compareBm = candidates[Math.floor(Math.random() * candidates.length)]
+  switchRightBasemap(compareBm)
+
+  panelRightEl.style.display = ''
   applyClipPaths()
-
-  updateCompareLabel(compareBm.name)
 }
 
 function exitCompareMode() {
   compareMode = false
   compareBtn.classList.remove('active')
-  sliderEl.style.display = 'none'
+  panelTitleEl.textContent = '🗺️ Basemap Explorer'
 
+  sliderEl.style.display = 'none'
   clearClipPaths()
 
-  // Hide mapRight
   mapRightEl.style.display = 'none'
   Object.values(layersRight).forEach(l => l.setVisible(false))
   compareId = null
 
-  updateCompareLabel(null)
+  panelRightEl.style.display = 'none'
   mapLeft.render()
 }
 
-// ── Compare button ──
-const compareBtn = document.getElementById('compare-btn')
 compareBtn.addEventListener('click', () => {
   if (compareMode) exitCompareMode()
   else enterCompareMode()
@@ -385,90 +347,103 @@ document.addEventListener('touchmove', e => {
 
 document.addEventListener('touchend', () => { dragging = false })
 
-// ── Window resize: update clip-paths ──
+// ── Window resize ──
 window.addEventListener('resize', () => {
   if (compareMode) applyClipPaths()
 })
 
-// ── Build panel ──
-const panelBody = document.getElementById('panel-body')
+// ── Build panel body ──
+function buildPanel(bodyEl, onClickBm) {
+  const searchWrap = document.createElement('div')
+  searchWrap.style.cssText = 'padding:0.4rem 0.2rem 0.2rem;'
+  const searchInput = document.createElement('input')
+  searchInput.type = 'search'
+  searchInput.placeholder = 'Filter basemaps…'
+  searchInput.style.cssText = 'width:100%;padding:0.35rem 0.5rem;border:1.5px solid #e5e7eb;border-radius:8px;font-size:0.75rem;outline:none;'
+  searchInput.addEventListener('focus', () => { searchInput.style.borderColor = '#0ea5e9' })
+  searchInput.addEventListener('blur', () => { searchInput.style.borderColor = '#e5e7eb' })
+  searchWrap.appendChild(searchInput)
+  bodyEl.appendChild(searchWrap)
 
-// Search input
-const searchWrap = document.createElement('div')
-searchWrap.style.cssText = 'padding:0.4rem 0.2rem 0.2rem;'
-const searchInput = document.createElement('input')
-searchInput.type = 'search'
-searchInput.placeholder = 'Filter basemaps…'
-searchInput.id = 'bm-search'
-searchInput.style.cssText = 'width:100%;padding:0.35rem 0.5rem;border:1.5px solid #e5e7eb;border-radius:8px;font-size:0.75rem;outline:none;'
-searchInput.addEventListener('focus', () => { searchInput.style.borderColor = '#0ea5e9' })
-searchInput.addEventListener('blur', () => { searchInput.style.borderColor = '#e5e7eb' })
-searchWrap.appendChild(searchInput)
-panelBody.appendChild(searchWrap)
+  const noResults = document.createElement('div')
+  noResults.textContent = 'No results'
+  noResults.style.cssText = 'display:none;font-size:0.75rem;color:#9ca3af;text-align:center;padding:0.8rem 0;'
+  bodyEl.appendChild(noResults)
 
-const noResults = document.createElement('div')
-noResults.id = 'no-results'
-noResults.textContent = 'No results'
-noResults.style.cssText = 'display:none;font-size:0.75rem;color:#9ca3af;text-align:center;padding:0.8rem 0;'
-panelBody.appendChild(noResults)
+  const allBtns = []
+  const catGroups = []
 
-// Category + button elements stored for filtering
-const catGroups = []
+  BASEMAPS.forEach(cat => {
+    const label = document.createElement('div')
+    label.className = 'cat-label'
+    label.textContent = cat.category
+    bodyEl.appendChild(label)
 
-BASEMAPS.forEach(cat => {
-  const label = document.createElement('div')
-  label.className = 'cat-label'
-  label.textContent = cat.category
-  panelBody.appendChild(label)
-
-  const btns = []
-  cat.maps.forEach(bm => {
-    const btn = document.createElement('button')
-    btn.className = 'bm-btn'
-    btn.dataset.id = bm.id
-    btn.innerHTML = `
-      <div class="bm-thumb"><img src="${bm.thumb}" alt="" onerror="this.parentElement.style.background='#e5e7eb'" /></div>
-      <div class="bm-info">
-        <div class="bm-name">${bm.name}</div>
-        <div class="bm-provider">${bm.provider}</div>
-        <div class="bm-vs" style="display:none"></div>
-      </div>
-      <div class="bm-check"></div>
-    `
-    btn.addEventListener('click', () => switchBasemap(bm))
-    panelBody.appendChild(btn)
-    btns.push({ btn, bm })
-  })
-
-  catGroups.push({ label, btns })
-})
-
-// ── Search filter ──
-searchInput.addEventListener('input', () => {
-  const q = searchInput.value.trim().toLowerCase()
-  let visibleCount = 0
-
-  catGroups.forEach(({ label, btns }) => {
-    let catVisible = 0
-    btns.forEach(({ btn, bm }) => {
-      const match = !q || bm.name.toLowerCase().includes(q) || bm.provider.toLowerCase().includes(q)
-      btn.style.display = match ? '' : 'none'
-      if (match) catVisible++
+    const btns = []
+    cat.maps.forEach(bm => {
+      const btn = document.createElement('button')
+      btn.className = 'bm-btn'
+      btn.dataset.id = bm.id
+      btn.innerHTML = `
+        <div class="bm-thumb"><img src="${bm.thumb}" alt="" onerror="this.parentElement.style.background='#e5e7eb'" /></div>
+        <div class="bm-info">
+          <div class="bm-name">${bm.name}</div>
+          <div class="bm-provider">${bm.provider}</div>
+        </div>
+        <div class="bm-check"></div>
+      `
+      btn.addEventListener('click', () => onClickBm(bm))
+      bodyEl.appendChild(btn)
+      btns.push({ btn, bm })
+      allBtns.push({ btn, bm })
     })
-    label.style.display = catVisible > 0 ? '' : 'none'
-    visibleCount += catVisible
+
+    catGroups.push({ label, btns })
   })
 
-  noResults.style.display = visibleCount === 0 ? '' : 'none'
+  searchInput.addEventListener('input', () => {
+    const q = searchInput.value.trim().toLowerCase()
+    let visibleCount = 0
+
+    catGroups.forEach(({ label, btns }) => {
+      let catVisible = 0
+      btns.forEach(({ btn, bm }) => {
+        const match = !q || bm.name.toLowerCase().includes(q) || bm.provider.toLowerCase().includes(q)
+        btn.style.display = match ? '' : 'none'
+        if (match) catVisible++
+      })
+      label.style.display = catVisible > 0 ? '' : 'none'
+      visibleCount += catVisible
+    })
+
+    noResults.style.display = visibleCount === 0 ? '' : 'none'
+  })
+
+  function setActive(id) {
+    allBtns.forEach(({ btn, bm }) => {
+      btn.classList.toggle('active', bm.id === id)
+    })
+  }
+
+  return { setActive }
+}
+
+// ── Initialize panels ──
+const leftPanel = buildPanel(document.getElementById('panel-body'), bm => switchLeftBasemap(bm))
+const rightPanel = buildPanel(document.getElementById('panel-right-body'), bm => switchRightBasemap(bm))
+
+// ── Minimize buttons ──
+document.getElementById('minimize-btn-left').addEventListener('click', () => {
+  const panel = document.getElementById('panel')
+  const minimized = panel.classList.toggle('minimized')
+  document.getElementById('minimize-btn-left').textContent = minimized ? '+' : '–'
 })
 
-// ── Minimize ──
-const minimizeBtn = document.getElementById('minimize-btn')
-const panel = document.getElementById('panel')
-minimizeBtn.addEventListener('click', () => {
+document.getElementById('minimize-btn-right').addEventListener('click', () => {
+  const panel = document.getElementById('panel-right')
   const minimized = panel.classList.toggle('minimized')
-  minimizeBtn.textContent = minimized ? '+' : '–'
+  document.getElementById('minimize-btn-right').textContent = minimized ? '+' : '–'
 })
 
 // ── Default basemap ──
-switchBasemap(BASEMAPS[0].maps[1]) // Positron
+switchLeftBasemap(BASEMAPS[0].maps[1]) // Positron

@@ -16,11 +16,10 @@
       height: 100%;
     }
 
-    /* ── Panel ── */
-    #panel {
+    /* ── Panels (shared) ── */
+    #panel, #panel-right {
       position: fixed;
       top: 1rem;
-      left: 1rem;
       z-index: 100;
       width: 220px;
       background: rgba(255,255,255,0.97);
@@ -28,8 +27,10 @@
       box-shadow: 0 8px 32px rgba(0,0,0,0.18);
       overflow: hidden;
     }
+    #panel { left: 1rem; }
+    #panel-right { right: 1rem; }
 
-    #panel-header {
+    #panel-header, #panel-right-header {
       display: flex;
       align-items: center;
       gap: 0.5rem;
@@ -45,20 +46,27 @@
       flex-shrink: 0; transition: background 0.15s;
     }
     #panel-header a:hover { background: rgba(255,255,255,0.25); }
-    #panel-header .title { font-size: 0.85rem; font-weight: 700; flex: 1; }
+    #panel-header .title, #panel-right-header .title {
+      font-size: 0.85rem; font-weight: 700; flex: 1;
+    }
 
-    #minimize-btn {
+    .minimize-btn {
       background: rgba(255,255,255,0.15); border: none;
       border-radius: 50%; width: 22px; height: 22px;
       color: #fff; cursor: pointer; font-size: 0.7rem;
       display: flex; align-items: center; justify-content: center;
       transition: background 0.15s; flex-shrink: 0;
     }
-    #minimize-btn:hover { background: rgba(255,255,255,0.3); }
+    .minimize-btn:hover { background: rgba(255,255,255,0.3); }
 
     #panel.minimized #panel-body { display: none; }
+    #panel-right.minimized #panel-right-body { display: none; }
 
-    #panel-body { padding: 0.6rem; display: flex; flex-direction: column; gap: 0.3rem; max-height: calc(100vh - 6rem); overflow-y: auto; }
+    #panel-body, #panel-right-body {
+      padding: 0.6rem;
+      display: flex; flex-direction: column; gap: 0.3rem;
+      max-height: calc(100vh - 6rem); overflow-y: auto;
+    }
 
     /* ── Category ── */
     .cat-label {
@@ -140,10 +148,10 @@
       font-size: 0.75rem; color: #555; user-select: none;
     }
 
-    /* ── vs label ── */
-    .bm-vs {
-      font-size: 0.6rem; color: #9ca3af;
-      font-style: italic; margin-top: 1px;
+    /* ── Mobile ── */
+    @media (max-width: 600px) {
+      #panel, #panel-right { width: calc(50vw - 1.5rem); }
+      #panel-header .title, #panel-right-header .title { font-size: 0.75rem; }
     }
 
     /* OL overrides */
@@ -161,11 +169,21 @@
 <div id="panel">
   <div id="panel-header">
     <a href="../index.html" title="Back to gallery">←</a>
-    <span class="title">🗺️ Basemap Explorer</span>
+    <span class="title" id="panel-title">🗺️ Basemap Explorer</span>
     <button id="compare-btn" title="Compare basemaps">⇔ Compare</button>
-    <button id="minimize-btn" title="Minimize">–</button>
+    <button class="minimize-btn" id="minimize-btn-left" title="Minimize">–</button>
   </div>
   <div id="panel-body">
+    <!-- Injected by JS -->
+  </div>
+</div>
+
+<div id="panel-right" style="display:none">
+  <div id="panel-right-header">
+    <span class="title">Right ▶</span>
+    <button class="minimize-btn" id="minimize-btn-right" title="Minimize">–</button>
+  </div>
+  <div id="panel-right-body">
     <!-- Injected by JS -->
   </div>
 </div>
