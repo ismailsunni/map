@@ -186,6 +186,10 @@ const BASEMAPS = [
   },
 ]
 
+// ── Flat list helper ──
+const allBasemaps = BASEMAPS.flatMap(c => c.maps)
+function getBmById(id) { return allBasemaps.find(b => b.id === id) }
+
 // ── Build OL map ──
 const view = new View({ center: fromLonLat([0, 20]), zoom: 2 })
 const map = new Map({ target: 'map', view, controls: defaultControls() })
@@ -203,7 +207,120 @@ function getOrCreateLayer(bm) {
   return layer
 }
 
+// ── Compare state ──
+let compareMode = false
+let compareId = null
+let sliderX = window.innerWidth / 2
+
+// Stored event handler refs for cleanup
+let primaryPrerender = null
+let primaryPostrender = null
+let comparePrerender = null
+let comparePostrender = null
+
+function addClipping(layer, side) {
+  const pre = (evt) => {
+    const ctx = evt.context
+    const size = evt.frameState.size
+    const w = size[0], h = size[1]
+    ctx.save()
+    ctx.beginPath()
+    if (side === 'left') {
+      ctx.rect(0, 0, sliderX, h)
+    } else {
+      ctx.rect(sliderX, 0, w - sliderX, h)
+    }
+    ctx.clip()
+  }
+  const post = (evt) => { evt.context.restore() }
+  layer.on('prerender', pre)
+  layer.on('postrender', post)
+  return { pre, post }
+}
+
+function removeClipping(layer, pre, post) {
+  if (pre) layer.un('prerender', pre)
+  if (post) layer.un('postrender', post)
+}
+
+function updateCompareLabel(compareName) {
+  document.querySelectorAll('.bm-vs').forEach(el => {
+    el.textContent = ''
+    el.style.display = 'none'
+  })
+  if (compareName) {
+    const activeBtn = document.querySelector('.bm-btn.active')
+    if (activeBtn) {
+      const vsEl = activeBtn.querySelector('.bm-vs')
+      if (vsEl) {
+        vsEl.textContent = `vs ${compareName}`
+        vsEl.style.display = ''
+      }
+    }
+  }
+}
+
+// ── Slider element ──
+const sliderEl = document.getElementById('compare-slider')
+const sliderHandle = document.getElementById('compare-handle')
+
+function updateSliderPosition() {
+  sliderEl.style.left = sliderX + 'px'
+}
+
+// ── Switch basemap ──
 function switchBasemap(bm) {
+  if (compareMode) {
+    const oldPrimaryId = activeId
+
+    // Remove clipping from old layers
+    if (oldPrimaryId && layers[oldPrimaryId]) {
+      removeClipping(layers[oldPrimaryId], primaryPrerender, primaryPostrender)
+    }
+    if (compareId && layers[compareId]) {
+      removeClipping(layers[compareId], comparePrerender, comparePostrender)
+      layers[compareId].setVisible(false)
+    }
+
+    // New primary = clicked basemap; new compare = old primary
+    activeId = bm.id
+    compareId = oldPrimaryId
+
+    // Ensure both layers exist and are visible
+    const primaryLayer = getOrCreateLayer(bm)
+    primaryLayer.setVisible(true)
+
+    const newCompareBm = getBmById(compareId)
+    const compareLayer = getOrCreateLayer(newCompareBm)
+    compareLayer.setVisible(true)
+
+    // Hide all other layers
+    Object.entries(layers).forEach(([id, layer]) => {
+      if (id !== activeId && id !== compareId) layer.setVisible(false)
+    })
+
+    // Re-add clipping
+    const { pre: pPre, post: pPost } = addClipping(primaryLayer, 'right')
+    const { pre: cPre, post: cPost } = addClipping(compareLayer, 'left')
+    primaryPrerender = pPre
+    primaryPostrender = pPost
+    comparePrerender = cPre
+    comparePostrender = cPost
+
+    // Update UI
+    document.querySelectorAll('.bm-btn').forEach(b => b.classList.remove('active'))
+    const btn = document.querySelector(`.bm-btn[data-id="${bm.id}"]`)
+    if (btn) btn.classList.add('active')
+
+    document.getElementById('active-name').textContent = `${bm.name} · ${bm.provider}`
+    document.getElementById('active-attribution').innerHTML = bm.attribution
+
+    updateCompareLabel(newCompareBm.name)
+    map.render()
+    return
+  }
+
+  // Normal mode
   Object.values(layers).forEach(l => l.setVisible(false))
   const layer = getOrCreateLayer(bm)
   layer.setVisible(true)
@@ -216,6 +333,102 @@ function switchBasemap(bm) {
   document.getElementById('active-name').textContent = `${bm.name} · ${bm.provider}`
   document.getElementById('active-attribution').innerHTML = bm.attribution
 }
+
+// ── Enter / exit compare mode ──
+function enterCompareMode() {
+  compareMode = true
+  compareBtn.classList.add('active')
+
+  sliderX = (map.getSize()?.[0] ?? window.innerWidth) / 2
+  sliderEl.style.display = ''
+  updateSliderPosition()
+
+  // Pick a random compare basemap different from current primary
+  const candidates = allBasemaps.filter(bm => bm.id !== activeId)
+  const compareBm = candidates[Math.floor(Math.random() * candidates.length)]
+  compareId = compareBm.id
+
+  const compareLayer = getOrCreateLayer(compareBm)
+  compareLayer.setVisible(true)
+
+  const primaryLayer = layers[activeId]
+
+  const { pre: pPre, post: pPost } = addClipping(primaryLayer, 'right')
+  const { pre: cPre, post: cPost } = addClipping(compareLayer, 'left')
+  primaryPrerender = pPre
+  primaryPostrender = pPost
+  comparePrerender = cPre
+  comparePostrender = cPost
+
+  updateCompareLabel(compareBm.name)
+  map.render()
+}
+
+function exitCompareMode() {
+  compareMode = false
+  compareBtn.classList.remove('active')
+  sliderEl.style.display = 'none'
+
+  // Remove clipping from primary
+  if (activeId && layers[activeId]) {
+    removeClipping(layers[activeId], primaryPrerender, primaryPostrender)
+  }
+
+  // Remove clipping and hide compare layer
+  if (compareId && layers[compareId]) {
+    removeClipping(layers[compareId], comparePrerender, comparePostrender)
+    layers[compareId].setVisible(false)
+  }
+
+  primaryPrerender = primaryPostrender = comparePrerender = comparePostrender = null
+  compareId = null
+
+  updateCompareLabel(null)
+  map.render()
+}
+
+// ── Compare button ──
+const compareBtn = document.getElementById('compare-btn')
+compareBtn.addEventListener('click', () => {
+  if (compareMode) exitCompareMode()
+  else enterCompareMode()
+})
+
+// ── Slider drag (mouse) ──
+let dragging = false
+
+sliderHandle.addEventListener('mousedown', e => {
+  dragging = true
+  e.preventDefault()
+})
+
+document.addEventListener('mousemove', e => {
+  if (!dragging) return
+  const rect = document.getElementById('map').getBoundingClientRect()
+  sliderX = Math.max(0, Math.min(rect.width, e.clientX - rect.left))
+  updateSliderPosition()
+  map.render()
+})
+
+document.addEventListener('mouseup', () => { dragging = false })
+
+// ── Slider drag (touch) ──
+sliderHandle.addEventListener('touchstart', e => {
+  dragging = true
+  e.preventDefault()
+}, { passive: false })
+
+document.addEventListener('touchmove', e => {
+  if (!dragging) return
+  const rect = document.getElementById('map').getBoundingClientRect()
+  const touch = e.touches[0]
+  sliderX = Math.max(0, Math.min(rect.width, touch.clientX - rect.left))
+  updateSliderPosition()
+  map.render()
+  e.preventDefault()
+}, { passive: false })
+
+document.addEventListener('touchend', () => { dragging = false })
 
 // ── Build panel ──
 const panelBody = document.getElementById('panel-body')
@@ -258,6 +471,7 @@ BASEMAPS.forEach(cat => {
       <div class="bm-info">
         <div class="bm-name">${bm.name}</div>
         <div class="bm-provider">${bm.provider}</div>
+        <div class="bm-vs" style="display:none"></div>
       </div>
       <div class="bm-check"></div>
     `

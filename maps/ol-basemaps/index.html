@@ -107,6 +107,40 @@
     }
     #active-name { font-weight: 700; color: #fff; }
 
+    /* ── Compare button ── */
+    #compare-btn {
+      background: rgba(255,255,255,0.15); border: none;
+      border-radius: 6px; padding: 2px 6px;
+      color: #fff; cursor: pointer; font-size: 0.65rem;
+      display: flex; align-items: center; gap: 0.15rem;
+      white-space: nowrap; transition: background 0.15s; flex-shrink: 0;
+    }
+    #compare-btn:hover { background: rgba(255,255,255,0.3); }
+    #compare-btn.active { background: #0ea5e9; }
+
+    /* ── Compare slider ── */
+    #compare-slider {
+      position: fixed; top: 0; bottom: 0;
+      width: 2px; background: rgba(255,255,255,0.9);
+      box-shadow: 0 0 6px rgba(0,0,0,0.45);
+      z-index: 90; pointer-events: none;
+    }
+    #compare-handle {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 32px; height: 32px; border-radius: 50%;
+      background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,0.35);
+      cursor: ew-resize; pointer-events: all;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; color: #555; user-select: none;
+    }
+
+    /* ── vs label ── */
+    .bm-vs {
+      font-size: 0.6rem; color: #9ca3af;
+      font-style: italic; margin-top: 1px;
+    }
+
     /* OL overrides */
     .ol-zoom { bottom: 2rem !important; top: auto !important; right: 1rem !important; left: auto !important; }
     .ol-attribution { bottom: 1.5rem !important; }
@@ -122,11 +156,16 @@
   <div id="panel-header">
     <a href="../index.html" title="Back to gallery">←</a>
     <span class="title">🗺️ Basemap Explorer</span>
+    <button id="compare-btn" title="Compare basemaps">⇔ Compare</button>
     <button id="minimize-btn" title="Minimize">–</button>
   </div>
   <div id="panel-body">
     <!-- Injected by JS -->
   </div>
+</div>
+
+<div id="compare-slider" style="display:none">
+  <div id="compare-handle">⇔</div>
 </div>
 
 <div id="info-bar">
