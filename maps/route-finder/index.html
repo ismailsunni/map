@@ -25,6 +25,29 @@
     }
     #panel.minimized #panel-body { display: none; }
 
+    /* ── Desktop: panel on left ── */
+    @media (min-width: 640px) {
+      #panel {
+        top: 1rem;
+        left: 1rem;
+        bottom: 1rem;
+        transform: none;
+        width: 300px;
+        border-radius: 16px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      #panel.minimized {
+        bottom: auto;
+        height: auto;
+      }
+      #panel-body {
+        flex: 1;
+        overflow-y: auto;
+      }
+    }
+
     #panel-header {
       display: flex;
       align-items: center;
@@ -225,6 +248,15 @@
     }
     #basemap-switcher button.active { background: #1a1a1a; color: #fff; }
     #basemap-switcher button:not(.active):hover { background: #f3f4f6; color: #374151; }
+
+    /* Desktop: move basemap switcher below the panel */
+    @media (min-width: 640px) {
+      #basemap-switcher {
+        top: auto;
+        bottom: 1rem;
+        left: 1rem;
+      }
+    }
 
     /* ── OL overrides ── */
     .ol-zoom {
