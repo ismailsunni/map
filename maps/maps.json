@@ -1,30 +1,62 @@
 [
   {
+    "id": "ol-basemaps",
+    "title": "Basemap Explorer",
+    "description": "Browse 14 basemap styles side by side \u2014 street, terrain, artistic, satellite, and vector tiles. Built with OpenLayers.",
+    "library": "OpenLayers",
+    "libraryColor": "#4a90d9",
+    "thumbnail": "thumb.png",
+    "tags": [
+      "basemap",
+      "tiles",
+      "openlayers",
+      "satellite",
+      "terrain"
+    ]
+  },
+  {
     "id": "sheet-map",
     "title": "Sheet Map",
     "description": "Load points from a public Google Sheet and visualize them on a map with clustering. Just paste a URL.",
     "library": "OpenLayers",
     "libraryColor": "#059669",
     "thumbnail": "thumb.png",
-    "tags": ["google-sheets", "csv", "clustering", "pins"]
+    "tags": [
+      "google-sheets",
+      "csv",
+      "clustering",
+      "pins"
+    ]
   },
   {
     "id": "route-finder",
     "title": "Route Finder",
-    "description": "Find routes and solve TSP across city landmarks. Switch between Yogyakarta and München. Real road distances via pgRouting + Supabase.",
+    "description": "Find routes and solve TSP across city landmarks. Switch between Yogyakarta and M\u00fcnchen. Real road distances via pgRouting + Supabase.",
     "library": "OpenLayers",
     "libraryColor": "#2563eb",
     "thumbnail": "thumb.png",
-    "tags": ["routing", "pgrouting", "supabase", "tsp", "yogyakarta", "munich"]
+    "tags": [
+      "routing",
+      "pgrouting",
+      "supabase",
+      "tsp",
+      "yogyakarta",
+      "munich"
+    ]
   },
   {
     "id": "daylight-duration",
     "title": "Daylight Duration",
-    "description": "How many hours of daylight — or fasting — does each latitude get? Switch between Daylight and Fasting mode (6 Islamic methods + custom), animate through the year, and see polar effects.",
+    "description": "How many hours of daylight \u2014 or fasting \u2014 does each latitude get? Switch between Daylight and Fasting mode (6 Islamic methods + custom), animate through the year, and see polar effects.",
     "library": "OpenLayers",
     "libraryColor": "#4a90d9",
     "thumbnail": "thumb.png",
-    "tags": ["solar", "animation", "raster", "latitude"]
+    "tags": [
+      "solar",
+      "animation",
+      "raster",
+      "latitude"
+    ]
   },
   {
     "id": "ol-world",
@@ -33,7 +65,11 @@
     "library": "OpenLayers",
     "libraryColor": "#4a90d9",
     "thumbnail": "thumb.png",
-    "tags": ["osm", "raster", "tiles"]
+    "tags": [
+      "osm",
+      "raster",
+      "tiles"
+    ]
   },
   {
     "id": "maplibre-city",
@@ -42,7 +78,11 @@
     "library": "MapLibre",
     "libraryColor": "#47b881",
     "thumbnail": "thumb.png",
-    "tags": ["vector", "tiles", "gl"]
+    "tags": [
+      "vector",
+      "tiles",
+      "gl"
+    ]
   },
   {
     "id": "leaflet-earthquakes",
@@ -51,7 +91,13 @@
     "library": "Leaflet",
     "libraryColor": "#1a9850",
     "thumbnail": "thumb.png",
-    "tags": ["heatmap", "leaflet", "earthquake", "usgs", "realtime"]
+    "tags": [
+      "heatmap",
+      "leaflet",
+      "earthquake",
+      "usgs",
+      "realtime"
+    ]
   },
   {
     "id": "cesium-globe",
@@ -60,6 +106,10 @@
     "library": "Cesium",
     "libraryColor": "#e67e22",
     "thumbnail": "thumb.png",
-    "tags": ["3d", "globe", "terrain"]
+    "tags": [
+      "3d",
+      "globe",
+      "terrain"
+    ]
   }
 ]
