@@ -25,25 +25,21 @@
     }
     #panel.minimized #panel-body { display: none; }
 
-    /* ── Desktop: panel on left ── */
+    /* ── Desktop: panel top-left ── */
     @media (min-width: 640px) {
       #panel {
         top: 1rem;
         left: 1rem;
-        bottom: 1rem;
+        bottom: auto;
         transform: none;
         width: 300px;
         border-radius: 16px;
+        max-height: calc(100vh - 2rem);
         display: flex;
         flex-direction: column;
         overflow: hidden;
       }
-      #panel.minimized {
-        bottom: auto;
-        height: auto;
-      }
       #panel-body {
-        flex: 1;
         overflow-y: auto;
       }
     }
