@@ -10,6 +10,12 @@
     html, body { height: 100%; margin: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
     #map { width: 100%; height: 100%; }
 
+    @media (min-width: 640px) {
+      body { display: flex; flex-direction: row; }
+      #sidebar { width: 320px; flex-shrink: 0; height: 100%; overflow-y: auto; background: #fff; box-shadow: 2px 0 8px rgba(0,0,0,0.08); z-index: 100; display: flex; flex-direction: column; }
+      #map { flex: 1; height: 100%; }
+    }
+
     /* ── Floating panel ── */
     #panel {
       position: fixed;
@@ -25,23 +31,24 @@
     }
     #panel.minimized #panel-body { display: none; }
 
-    /* ── Desktop: panel top-left ── */
+    /* ── Desktop: panel is part of sidebar layout ── */
     @media (min-width: 640px) {
       #panel {
-        top: 1rem;
-        left: 1rem;
-        bottom: auto;
+        position: static;
         transform: none;
-        width: 300px;
-        border-radius: 16px;
-        max-height: calc(100vh - 2rem);
+        width: 100%;
+        border-radius: 0;
+        box-shadow: none;
+        flex: 1;
         display: flex;
         flex-direction: column;
         overflow: hidden;
       }
       #panel-body {
+        flex: 1;
         overflow-y: auto;
       }
+      #panel.minimized #panel-body { display: flex; }
     }
 
     #panel-header {
@@ -245,12 +252,17 @@
     #basemap-switcher button.active { background: #1a1a1a; color: #fff; }
     #basemap-switcher button:not(.active):hover { background: #f3f4f6; color: #374151; }
 
-    /* Desktop: move basemap switcher below the panel */
+    /* Desktop: basemap switcher inside sidebar at bottom */
     @media (min-width: 640px) {
       #basemap-switcher {
-        top: auto;
-        bottom: 1rem;
-        left: 1rem;
+        position: static;
+        top: auto; left: auto;
+        border-radius: 0;
+        border: none;
+        border-top: 1px solid #e5e7eb;
+        box-shadow: none;
+        padding: 0.5rem 0.75rem;
+        justify-content: center;
       }
     }
 
@@ -278,8 +290,7 @@
   </style>
 </head>
 <body>
-  <div id="map"></div>
-
+  <div id="sidebar">
   <div id="panel">
     <div id="panel-header">
       <a href="../index.html" id="back-link" title="Back to gallery">←</a>
@@ -306,8 +317,8 @@
     </div>
   </div>
 
-  <!-- Map overlay controls (top-right) -->
-  <div style="position:fixed;top:1rem;right:1rem;z-index:200;display:flex;gap:0.4rem;align-items:center;">
+  <!-- Map overlay controls (top-right on mobile, top-right on desktop since map is offset) -->
+  <div id="map-controls" style="position:fixed;top:1rem;right:1rem;z-index:200;display:flex;gap:0.4rem;align-items:center;">
     <button id="geo-btn" style="background:#fff;border:1px solid #e5e7eb;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:0.85rem;box-shadow:0 1px 4px rgba(0,0,0,0.1);transition:border-color 0.2s;" title="My location">📍</button>
     <button id="about-btn" style="background:#fff;border:1px solid #e5e7eb;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:0.85rem;font-weight:700;color:#6b7280;box-shadow:0 1px 4px rgba(0,0,0,0.1);" title="About">ℹ</button>
   </div>
@@ -334,11 +345,15 @@
 
   <div id="tooltip" class="ol-tooltip" style="display:none"></div>
 
+  </div><!-- /#panel -->
   <div id="basemap-switcher">
     <button data-basemap="positron" class="active">Light</button>
     <button data-basemap="osm">OSM</button>
     <button data-basemap="topo">Topo</button>
   </div>
+  </div><!-- /#sidebar -->
+
+  <div id="map"></div>
 
   <script>
     const aboutModal = document.getElementById('about-modal')
