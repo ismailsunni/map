@@ -326,13 +326,18 @@ function showInfoPanel(bm) {
   infoTagsEl.innerHTML = (bm.tags || []).map(t => `<span class="info-tag">${t}</span>`).join('')
   infoDescEl.textContent = bm.description || ''
   infoLinkEl.href = bm.link || '#'
+  infoPanelEl.dataset.activeId = bm.id
   infoPanelEl.classList.add('visible')
   infoPanelVisible = true
+  // Highlight the active info button
+  document.querySelectorAll('.lr-info').forEach(b => b.classList.toggle('active', b.dataset.id === bm.id))
 }
 
 function hideInfoPanel() {
   infoPanelEl.classList.remove('visible')
+  infoPanelEl.dataset.activeId = ''
   infoPanelVisible = false
+  document.querySelectorAll('.lr-info').forEach(b => b.classList.remove('active'))
 }
 
 function toggleInfoPanel(bm) {
@@ -504,6 +509,7 @@ function buildPanel(bodyEl) {
           <button class="lr-btn lr-left" data-id="${bm.id}" title="Set as left map">L</button>
           <button class="lr-btn lr-right" data-id="${bm.id}" title="Set as right map">R</button>
         </div>
+        <button class="lr-btn lr-info" data-id="${bm.id}" title="Basemap info" style="flex-shrink:0">ℹ</button>
         <div class="bm-check"></div>
       `
       btn.querySelector('.lr-left').addEventListener('click', e => {
@@ -513,6 +519,15 @@ function buildPanel(bodyEl) {
       btn.querySelector('.lr-right').addEventListener('click', e => {
         e.stopPropagation()
         switchRightBasemap(bm)
+      })
+      btn.querySelector('.lr-info').addEventListener('click', e => {
+        e.stopPropagation()
+        if (infoPanelVisible && infoPanelEl.dataset.activeId === bm.id) {
+          hideInfoPanel()
+        } else {
+          infoPanelEl.dataset.activeId = bm.id
+          showInfoPanel(bm)
+        }
       })
       btn.addEventListener('click', () => {
         switchLeftBasemap(bm)
