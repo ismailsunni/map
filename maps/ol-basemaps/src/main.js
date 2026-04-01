@@ -511,11 +511,11 @@ function buildPanel(bodyEl) {
           <div class="bm-name">${bm.name}</div>
           <div class="bm-provider">${bm.provider}</div>
         </div>
+        <button class="lr-btn lr-info" data-id="${bm.id}" title="Basemap info" style="flex-shrink:0">ℹ</button>
         <div class="bm-lr">
           <button class="lr-btn lr-left" data-id="${bm.id}" title="Set as left map">L</button>
           <button class="lr-btn lr-right" data-id="${bm.id}" title="Set as right map">R</button>
         </div>
-        <button class="lr-btn lr-info" data-id="${bm.id}" title="Basemap info" style="flex-shrink:0">ℹ</button>
         <div class="bm-check"></div>
       `
       btn.querySelector('.lr-left').addEventListener('click', e => {
