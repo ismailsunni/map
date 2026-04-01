@@ -356,7 +356,6 @@ function switchLeftBasemap(bm) {
   getOrCreateLayer(mapLeft, layersLeft, bm).setVisible(true)
   activeId = bm.id
   panel.updateActive()
-  document.getElementById('active-name').textContent = `${bm.name} · ${bm.provider}`
   updateAttributionBar()
   mapLeft.render()
   if (!compareMode) {
@@ -380,11 +379,11 @@ function switchRightBasemap(bm) {
 function updateAttributionBar() {
   const leftBm = getBmById(activeId)
   const rightBm = compareMode ? getBmById(compareId) : null
-  const attrEl = document.getElementById('active-attribution')
+  const nameEl = document.getElementById('active-name')
   if (rightBm) {
-    attrEl.innerHTML = `${leftBm?.attribution || ''} <span style="opacity:0.5;margin:0 4px">|</span> ${rightBm.attribution}`
+    nameEl.innerHTML = `${leftBm?.name || ''} · ${leftBm?.provider || ''} <span style="opacity:0.5;margin:0 5px">|</span> ${rightBm.name} · ${rightBm.provider}`
   } else {
-    attrEl.innerHTML = leftBm?.attribution || ''
+    nameEl.textContent = leftBm ? `${leftBm.name} · ${leftBm.provider}` : ''
   }
 }
 
