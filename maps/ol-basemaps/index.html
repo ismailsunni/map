@@ -122,14 +122,15 @@
 
     /* ── Compare button ── */
     #compare-btn {
-      background: rgba(255,255,255,0.15); border: none;
-      border-radius: 6px; padding: 2px 6px;
-      color: #fff; cursor: pointer; font-size: 0.65rem;
-      display: flex; align-items: center; gap: 0.15rem;
-      white-space: nowrap; transition: background 0.15s; flex-shrink: 0;
+      width: 100%; padding: 0.45rem 0.6rem; margin: 0.1rem 0;
+      background: #f1f5f9; border: 1.5px solid #e2e8f0;
+      border-radius: 8px; cursor: pointer;
+      font-size: 0.78rem; font-weight: 600; color: #334155;
+      display: flex; align-items: center; justify-content: center; gap: 0.35rem;
+      transition: all 0.15s;
     }
-    #compare-btn:hover { background: rgba(255,255,255,0.3); }
-    #compare-btn.active { background: #0ea5e9; }
+    #compare-btn:hover { background: #e2e8f0; border-color: #cbd5e1; }
+    #compare-btn.active { background: #0ea5e9; border-color: #0284c7; color: #fff; }
 
     /* ── Compare slider ── */
     #compare-slider {
@@ -253,10 +254,10 @@
   <div id="panel-header">
     <a href="../index.html" title="Back to gallery">←</a>
     <span class="title" id="panel-title">🗺️ Basemap Explorer</span>
-    <button id="compare-btn" title="Compare basemaps">⇔ Compare</button>
     <button class="minimize-btn" id="minimize-btn-left" title="Minimize">–</button>
   </div>
   <div id="panel-body">
+    <button id="compare-btn">⇔ Compare basemaps</button>
     <!-- Injected by JS -->
   </div>
 </div>
