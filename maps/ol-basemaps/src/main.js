@@ -278,8 +278,9 @@ function getOrCreateLayer(mapInst, registry, bm) {
 
 // ── State ──
 let compareMode = false
-let activeId = null   // left panel selection
-let compareId = null  // right panel selection
+let activeId = null   // left side selection
+let compareId = null  // right side selection
+let activeTab = 'left'
 let sliderX = window.innerWidth / 2
 let infoPanelVisible = false
 
@@ -349,7 +350,7 @@ function switchLeftBasemap(bm) {
   Object.values(layersLeft).forEach(l => l.setVisible(false))
   getOrCreateLayer(mapLeft, layersLeft, bm).setVisible(true)
   activeId = bm.id
-  leftPanel.setActive(bm.id)
+  panel.updateActive()
   document.getElementById('active-name').textContent = `${bm.name} · ${bm.provider}`
   document.getElementById('active-attribution').innerHTML = bm.attribution
   mapLeft.render()
@@ -361,17 +362,38 @@ function switchLeftBasemap(bm) {
 
 // ── Switch right basemap ──
 function switchRightBasemap(bm) {
-  const alreadyActive = bm.id === compareId
   Object.values(layersRight).forEach(l => l.setVisible(false))
   getOrCreateLayer(mapRight, layersRight, bm).setVisible(true)
   compareId = bm.id
-  rightPanel.setActive(bm.id)
+  panel.updateActive()
   mapRight.render()
   // No info panel in compare mode
 }
 
+// ── Compare tabs ──
+const tabsEl = document.getElementById('compare-tabs')
+const tabLeftBtn = document.getElementById('tab-left')
+const tabRightBtn = document.getElementById('tab-right')
+
+function setActiveTab(tab) {
+  activeTab = tab
+  if (tab === 'left') {
+    tabLeftBtn.classList.add('active')
+    tabLeftBtn.classList.remove('active-right')
+    tabRightBtn.classList.remove('active')
+    tabRightBtn.classList.remove('active-right')
+  } else {
+    tabLeftBtn.classList.remove('active')
+    tabLeftBtn.classList.remove('active-right')
+    tabRightBtn.classList.remove('active')
+    tabRightBtn.classList.add('active-right')
+  }
+}
+
+tabLeftBtn.addEventListener('click', () => setActiveTab('left'))
+tabRightBtn.addEventListener('click', () => setActiveTab('right'))
+
 // ── Enter / exit compare mode ──
-const panelRightEl = document.getElementById('panel-right')
 const panelTitleEl = document.getElementById('panel-title')
 const compareBtn = document.getElementById('compare-btn')
 
@@ -392,14 +414,16 @@ function enterCompareMode() {
   // Pick a random basemap different from left
   const candidates = allBasemaps.filter(bm => bm.id !== activeId)
   const compareBm = candidates[Math.floor(Math.random() * candidates.length)]
-  // Switch without triggering info panel toggle logic (compareId is null)
   Object.values(layersRight).forEach(l => l.setVisible(false))
   getOrCreateLayer(mapRight, layersRight, compareBm).setVisible(true)
   compareId = compareBm.id
-  rightPanel.setActive(compareBm.id)
   mapRight.render()
 
-  panelRightEl.style.display = ''
+  // Show tabs, reset to left
+  setActiveTab('left')
+  tabsEl.classList.add('visible')
+
+  panel.updateActive()
   applyClipPaths()
 }
 
@@ -416,7 +440,11 @@ function exitCompareMode() {
   Object.values(layersRight).forEach(l => l.setVisible(false))
   compareId = null
 
-  panelRightEl.style.display = 'none'
+  // Hide tabs
+  tabsEl.classList.remove('visible')
+  activeTab = 'left'
+
+  panel.updateActive()
   mapLeft.render()
 }
 
@@ -462,7 +490,7 @@ window.addEventListener('resize', () => {
 })
 
 // ── Build panel body ──
-function buildPanel(bodyEl, onClickBm) {
+function buildPanel(bodyEl) {
   const searchWrap = document.createElement('div')
   searchWrap.style.cssText = 'padding:0.4rem 0.2rem 0.2rem;'
   const searchInput = document.createElement('input')
@@ -501,7 +529,13 @@ function buildPanel(bodyEl, onClickBm) {
         </div>
         <div class="bm-check"></div>
       `
-      btn.addEventListener('click', () => onClickBm(bm))
+      btn.addEventListener('click', () => {
+        if (compareMode && activeTab === 'right') {
+          switchRightBasemap(bm)
+        } else {
+          switchLeftBasemap(bm)
+        }
+      })
       bodyEl.appendChild(btn)
       btns.push({ btn, bm })
       allBtns.push({ btn, bm })
@@ -528,30 +562,24 @@ function buildPanel(bodyEl, onClickBm) {
     noResults.style.display = visibleCount === 0 ? '' : 'none'
   })
 
-  function setActive(id) {
+  function updateActive() {
     allBtns.forEach(({ btn, bm }) => {
-      btn.classList.toggle('active', bm.id === id)
+      btn.classList.toggle('active', bm.id === activeId)
+      btn.classList.toggle('active-right', compareMode && bm.id === compareId)
     })
   }
 
-  return { setActive }
+  return { updateActive }
 }
 
-// ── Initialize panels ──
-const leftPanel = buildPanel(document.getElementById('panel-body'), bm => switchLeftBasemap(bm))
-const rightPanel = buildPanel(document.getElementById('panel-right-body'), bm => switchRightBasemap(bm))
+// ── Initialize panel ──
+const panel = buildPanel(document.getElementById('panel-body'))
 
-// ── Minimize buttons ──
+// ── Minimize button ──
 document.getElementById('minimize-btn-left').addEventListener('click', () => {
-  const panel = document.getElementById('panel')
-  const minimized = panel.classList.toggle('minimized')
+  const p = document.getElementById('panel')
+  const minimized = p.classList.toggle('minimized')
   document.getElementById('minimize-btn-left').textContent = minimized ? '+' : '–'
-})
-
-document.getElementById('minimize-btn-right').addEventListener('click', () => {
-  const panel = document.getElementById('panel-right')
-  const minimized = panel.classList.toggle('minimized')
-  document.getElementById('minimize-btn-right').textContent = minimized ? '+' : '–'
 })
 
 // ── Default basemap ──
