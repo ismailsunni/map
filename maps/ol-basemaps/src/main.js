@@ -469,8 +469,9 @@ window.addEventListener('resize', () => {
 
 // ── Build panel body ──
 function buildPanel(bodyEl) {
+  // Search — sticky, outside scroll
   const searchWrap = document.createElement('div')
-  searchWrap.style.cssText = 'padding:0.4rem 0.2rem 0.2rem;'
+  searchWrap.style.cssText = 'padding:0.2rem 0.2rem 0.3rem; flex-shrink:0;'
   const searchInput = document.createElement('input')
   searchInput.type = 'search'
   searchInput.placeholder = 'Filter basemaps…'
@@ -480,10 +481,15 @@ function buildPanel(bodyEl) {
   searchWrap.appendChild(searchInput)
   bodyEl.appendChild(searchWrap)
 
+  // Scrollable list container
+  const listEl = document.createElement('div')
+  listEl.id = 'bm-list'
+  bodyEl.appendChild(listEl)
+
   const noResults = document.createElement('div')
   noResults.textContent = 'No results'
   noResults.style.cssText = 'display:none;font-size:0.75rem;color:#9ca3af;text-align:center;padding:0.8rem 0;'
-  bodyEl.appendChild(noResults)
+  listEl.appendChild(noResults)
 
   const allBtns = []
   const catGroups = []
@@ -492,7 +498,7 @@ function buildPanel(bodyEl) {
     const label = document.createElement('div')
     label.className = 'cat-label'
     label.textContent = cat.category
-    bodyEl.appendChild(label)
+    listEl.appendChild(label)
 
     const btns = []
     cat.maps.forEach(bm => {
@@ -532,7 +538,7 @@ function buildPanel(bodyEl) {
       btn.addEventListener('click', () => {
         switchLeftBasemap(bm)
       })
-      bodyEl.appendChild(btn)
+      listEl.appendChild(btn)
       btns.push({ btn, bm })
       allBtns.push({ btn, bm })
     })

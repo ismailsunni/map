@@ -63,7 +63,12 @@
     #panel-body {
       padding: 0.6rem;
       display: flex; flex-direction: column; gap: 0.3rem;
-      max-height: calc(100vh - 10rem); overflow-y: auto;
+      max-height: calc(100vh - 5rem); overflow: hidden;
+    }
+    #bm-list {
+      flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 0.3rem;
+      /* Thin scrollbar */
+      scrollbar-width: thin; scrollbar-color: #e2e8f0 transparent;
     }
 
     /* ── Category ── */
