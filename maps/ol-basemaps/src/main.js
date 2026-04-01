@@ -353,10 +353,9 @@ function switchLeftBasemap(bm) {
   document.getElementById('active-name').textContent = `${bm.name} · ${bm.provider}`
   document.getElementById('active-attribution').innerHTML = bm.attribution
   mapLeft.render()
-  if (alreadyActive) {
-    toggleInfoPanel(bm)
-  } else {
-    showInfoPanel(bm)
+  if (!compareMode) {
+    if (alreadyActive) toggleInfoPanel(bm)
+    else showInfoPanel(bm)
   }
 }
 
@@ -368,11 +367,7 @@ function switchRightBasemap(bm) {
   compareId = bm.id
   rightPanel.setActive(bm.id)
   mapRight.render()
-  if (alreadyActive) {
-    toggleInfoPanel(bm)
-  } else {
-    showInfoPanel(bm)
-  }
+  // No info panel in compare mode
 }
 
 // ── Enter / exit compare mode ──
@@ -384,6 +379,7 @@ function enterCompareMode() {
   compareMode = true
   compareBtn.classList.add('active')
   panelTitleEl.textContent = '◀ Left'
+  hideInfoPanel()
   infoPanelEl.classList.add('compare')
 
   sliderX = window.innerWidth / 2
