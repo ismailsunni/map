@@ -252,6 +252,7 @@ const BASEMAPS = [
 
 // ── Flat list helper ──
 const allBasemaps = BASEMAPS.flatMap(c => c.maps)
+function getBmById(id) { return allBasemaps.find(b => b.id === id) }
 
 // ── Two OL maps sharing the same View ──
 const view = new View({ center: fromLonLat([0, 20]), zoom: 2 })
