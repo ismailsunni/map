@@ -280,7 +280,6 @@ function getOrCreateLayer(mapInst, registry, bm) {
 let compareMode = false
 let activeId = null   // left side selection
 let compareId = null  // right side selection
-let activeTab = 'left'
 let sliderX = window.innerWidth / 2
 let infoPanelVisible = false
 
@@ -370,37 +369,12 @@ function switchRightBasemap(bm) {
   // No info panel in compare mode
 }
 
-// ── Compare tabs ──
-const tabsEl = document.getElementById('compare-tabs')
-const tabLeftBtn = document.getElementById('tab-left')
-const tabRightBtn = document.getElementById('tab-right')
-
-function setActiveTab(tab) {
-  activeTab = tab
-  if (tab === 'left') {
-    tabLeftBtn.classList.add('active')
-    tabLeftBtn.classList.remove('active-right')
-    tabRightBtn.classList.remove('active')
-    tabRightBtn.classList.remove('active-right')
-  } else {
-    tabLeftBtn.classList.remove('active')
-    tabLeftBtn.classList.remove('active-right')
-    tabRightBtn.classList.remove('active')
-    tabRightBtn.classList.add('active-right')
-  }
-}
-
-tabLeftBtn.addEventListener('click', () => setActiveTab('left'))
-tabRightBtn.addEventListener('click', () => setActiveTab('right'))
-
 // ── Enter / exit compare mode ──
-const panelTitleEl = document.getElementById('panel-title')
 const compareBtn = document.getElementById('compare-btn')
 
 function enterCompareMode() {
   compareMode = true
   compareBtn.classList.add('active')
-  panelTitleEl.textContent = '◀ Left'
   hideInfoPanel()
   infoPanelEl.classList.add('compare')
 
@@ -419,9 +393,9 @@ function enterCompareMode() {
   compareId = compareBm.id
   mapRight.render()
 
-  // Show tabs, reset to left
-  setActiveTab('left')
-  tabsEl.classList.add('visible')
+  // Show L/R buttons, hide check indicators
+  document.querySelectorAll('.bm-lr').forEach(el => el.classList.add('visible'))
+  document.querySelectorAll('.bm-check').forEach(el => { el.style.display = 'none' })
 
   panel.updateActive()
   applyClipPaths()
@@ -430,7 +404,6 @@ function enterCompareMode() {
 function exitCompareMode() {
   compareMode = false
   compareBtn.classList.remove('active')
-  panelTitleEl.textContent = '🗺️ Basemap Explorer'
   infoPanelEl.classList.remove('compare')
 
   sliderEl.style.display = 'none'
@@ -440,9 +413,9 @@ function exitCompareMode() {
   Object.values(layersRight).forEach(l => l.setVisible(false))
   compareId = null
 
-  // Hide tabs
-  tabsEl.classList.remove('visible')
-  activeTab = 'left'
+  // Hide L/R buttons, show check indicators
+  document.querySelectorAll('.bm-lr').forEach(el => el.classList.remove('visible'))
+  document.querySelectorAll('.bm-check').forEach(el => { el.style.display = '' })
 
   panel.updateActive()
   mapLeft.render()
@@ -527,14 +500,22 @@ function buildPanel(bodyEl) {
           <div class="bm-name">${bm.name}</div>
           <div class="bm-provider">${bm.provider}</div>
         </div>
+        <div class="bm-lr">
+          <button class="lr-btn lr-left" data-id="${bm.id}" title="Set as left map">L</button>
+          <button class="lr-btn lr-right" data-id="${bm.id}" title="Set as right map">R</button>
+        </div>
         <div class="bm-check"></div>
       `
+      btn.querySelector('.lr-left').addEventListener('click', e => {
+        e.stopPropagation()
+        switchLeftBasemap(bm)
+      })
+      btn.querySelector('.lr-right').addEventListener('click', e => {
+        e.stopPropagation()
+        switchRightBasemap(bm)
+      })
       btn.addEventListener('click', () => {
-        if (compareMode && activeTab === 'right') {
-          switchRightBasemap(bm)
-        } else {
-          switchLeftBasemap(bm)
-        }
+        switchLeftBasemap(bm)
       })
       bodyEl.appendChild(btn)
       btns.push({ btn, bm })
@@ -562,11 +543,26 @@ function buildPanel(bodyEl) {
     noResults.style.display = visibleCount === 0 ? '' : 'none'
   })
 
+  function updateLeftActive(id) {
+    allBtns.forEach(({ btn, bm }) => {
+      btn.querySelector('.lr-left').classList.toggle('active', bm.id === id)
+    })
+  }
+
+  function updateRightActive(id) {
+    allBtns.forEach(({ btn, bm }) => {
+      btn.querySelector('.lr-right').classList.toggle('active', bm.id === id)
+    })
+  }
+
   function updateActive() {
     allBtns.forEach(({ btn, bm }) => {
       btn.classList.toggle('active', bm.id === activeId)
-      btn.classList.toggle('active-right', compareMode && bm.id === compareId)
     })
+    if (compareMode) {
+      updateLeftActive(activeId)
+      updateRightActive(compareId)
+    }
   }
 
   return { updateActive }
