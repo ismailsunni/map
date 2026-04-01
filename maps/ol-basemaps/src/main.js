@@ -356,7 +356,7 @@ function switchLeftBasemap(bm) {
   activeId = bm.id
   panel.updateActive()
   document.getElementById('active-name').textContent = `${bm.name} · ${bm.provider}`
-  document.getElementById('active-attribution').innerHTML = bm.attribution
+  updateAttributionBar()
   mapLeft.render()
   if (!compareMode) {
     if (alreadyActive) toggleInfoPanel(bm)
@@ -370,8 +370,21 @@ function switchRightBasemap(bm) {
   getOrCreateLayer(mapRight, layersRight, bm).setVisible(true)
   compareId = bm.id
   panel.updateActive()
+  updateAttributionBar()
   mapRight.render()
   // No info panel in compare mode
+}
+
+// ── Attribution bar ──
+function updateAttributionBar() {
+  const leftBm = getBmById(activeId)
+  const rightBm = compareMode ? getBmById(compareId) : null
+  const attrEl = document.getElementById('active-attribution')
+  if (rightBm) {
+    attrEl.innerHTML = `${leftBm?.attribution || ''} <span style="opacity:0.5;margin:0 4px">|</span> ${rightBm.attribution}`
+  } else {
+    attrEl.innerHTML = leftBm?.attribution || ''
+  }
 }
 
 // ── Enter / exit compare mode ──
@@ -423,6 +436,7 @@ function exitCompareMode() {
   document.querySelectorAll('.bm-check').forEach(el => { el.style.display = '' })
 
   panel.updateActive()
+  updateAttributionBar()
   mapLeft.render()
 }
 
