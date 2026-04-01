@@ -21,7 +21,7 @@
       position: fixed;
       top: 1rem;
       z-index: 100;
-      width: 220px;
+      width: 280px;
       background: rgba(255,255,255,0.97);
       border-radius: 14px;
       box-shadow: 0 8px 32px rgba(0,0,0,0.18);
@@ -65,7 +65,7 @@
     #panel-body, #panel-right-body {
       padding: 0.6rem;
       display: flex; flex-direction: column; gap: 0.3rem;
-      max-height: calc(100vh - 6rem); overflow-y: auto;
+      max-height: calc(100vh - 5rem); overflow-y: auto;
     }
 
     /* ── Category ── */
@@ -87,15 +87,15 @@
     .bm-btn.active { background: #f0f9ff; border-color: #0ea5e9; }
 
     .bm-thumb {
-      width: 36px; height: 36px; border-radius: 6px;
+      width: 42px; height: 42px; border-radius: 6px;
       background: #e5e7eb; flex-shrink: 0; overflow: hidden;
       border: 1px solid #e5e7eb;
     }
     .bm-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
     .bm-info { flex: 1; min-width: 0; }
-    .bm-name { font-size: 0.78rem; font-weight: 600; color: #1a1a1a; line-height: 1.2; }
-    .bm-provider { font-size: 0.62rem; color: #9ca3af; }
+    .bm-name { font-size: 0.82rem; font-weight: 600; color: #1a1a1a; line-height: 1.2; }
+    .bm-provider { font-size: 0.68rem; color: #9ca3af; }
 
     .bm-check {
       width: 16px; height: 16px; border-radius: 50%;
@@ -158,7 +158,7 @@
     #info-panel {
       position: fixed;
       bottom: 2rem;
-      left: 1rem;
+      right: 1rem;
       z-index: 150;
       width: 300px;
       background: rgba(255,255,255,0.97);
