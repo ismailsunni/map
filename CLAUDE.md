@@ -56,6 +56,54 @@ git push
 The GitHub Actions workflow already fetches submodules (`submodules: true` in checkout step).
 The build script will detect `package.json` and build it automatically.
 
+**The external repo can also deploy itself independently.**
+Add this workflow to the external repo (`.github/workflows/deploy.yml`):
+
+```yaml
+name: Deploy to GitHub Pages
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm install
+      - run: npm run build
+        env:
+          # Pass any secrets the map needs
+          VITE_STADIA_API_KEY: ${{ secrets.VITE_STADIA_API_KEY }}
+      - uses: actions/configure-pages@v4
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - uses: actions/deploy-pages@v4
+        id: deployment
+```
+
+This means the map deploys to **two places**:
+- `<user>.github.io/<repo>/` — standalone, from the map's own repo
+- `ismailsunni.id/map/<id>/` — as part of the gallery, via submodule
+
+**Important:** The map's `index.html` back button path differs between standalone and gallery.
+To handle both, use a relative `../index.html` — in standalone mode this 404s gracefully,
+or conditionally hide the back button when not in the gallery context.
+
 **Updating a submodule to latest:**
 ```bash
 cd maps/<id> && git pull origin main && cd ../..
