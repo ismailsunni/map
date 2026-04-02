@@ -23,31 +23,59 @@ map/
 
 ## Adding a New Map
 
-1. **Create the folder:** `maps/<your-map-id>/`
-2. **Write `index.html`:**
-   - Load whatever mapping library you want (CDN or local bundle)
-   - Include a `← Gallery` back button: `<a class="back-btn" href="../../index.html">← Gallery</a>`
-   - Load `../../assets/gallery.css` for the shared back-button style
-3. **Register it in `maps/maps.json`:**
-   ```json
-   {
-     "id": "your-map-id",
-     "title": "Your Map Title",
-     "description": "What does this map show?",
-     "library": "LibraryName",
-     "libraryColor": "#hexcolor",
-     "thumbnail": "thumb.png",
-     "tags": ["tag1", "tag2"]
-   }
-   ```
-4. **(Optional)** Add a `thumb.png` (16:9 screenshot) inside the map folder for the gallery card.
-5. Push to `main` — GitHub Actions handles the rest.
+### Option A — Plain HTML (CDN-based)
+1. Create `maps/<your-map-id>/index.html`
+   - Load your mapping library via CDN
+   - Back button: `<a class="back-btn" href="../index.html">← Gallery</a>` *(note: `../`, not `../../`)*
+2. Register in `maps/maps.json` (see format below)
+3. Push to `main` — done.
 
-## Per-Map Builds (Optional)
+### Option B — Vite/npm build (package.json)
+1. Create `maps/<your-map-id>/` with a `package.json` that has a `"build"` script outputting to `dist/`
+2. The root build script (`scripts/build.js`) **auto-detects** `package.json` and runs `npm install && npm run build` — no extra config needed
+3. Register in `maps/maps.json`
+4. Push to `main` — done.
 
-If a map needs a build step (e.g., Vite, Webpack), add a step in `.github/workflows/deploy.yml`
-under the commented-out section. The final output should be inside the map folder so the static
-upload picks it up.
+### Option C — External repo as Git submodule (with package.json)
+This lets you maintain a map in its own repository and include it in the gallery.
+
+**Requirements for the external repo:**
+- Must have `package.json` with a `"build"` script that outputs to `dist/`
+- Back button in `index.html` must use `../index.html` (one level up, since the gallery flattens paths)
+- Should not hardcode absolute paths
+
+**Steps to add:**
+```bash
+# 1. Add the submodule
+cd /path/to/map
+git submodule add https://github.com/<user>/<repo> maps/<id>
+git commit -m "add: <name> as submodule"
+git push
+```
+
+The GitHub Actions workflow already fetches submodules (`submodules: true` in checkout step).
+The build script will detect `package.json` and build it automatically.
+
+**Updating a submodule to latest:**
+```bash
+cd maps/<id> && git pull origin main && cd ../..
+git add maps/<id> && git commit -m "update: <name> submodule" && git push
+```
+
+### maps.json entry format
+```json
+{
+  "id": "your-map-id",
+  "title": "Your Map Title",
+  "description": "What does this map show?",
+  "library": "LibraryName",
+  "libraryColor": "#hexcolor",
+  "thumbnail": "thumb.png",
+  "tags": ["tag1", "tag2"]
+}
+```
+
+Add a `thumb.png` (640×360px) inside the map folder for the gallery card thumbnail.
 
 ## Mapping Libraries Used
 

@@ -14,15 +14,25 @@ A personal gallery of interactive maps built with various mapping libraries.
 
 ## Adding a Map
 
-See [CLAUDE.md](CLAUDE.md) for full instructions.
+See [CLAUDE.md](CLAUDE.md) for full instructions. Three options:
 
-Short version:
-1. Create `maps/<id>/index.html` with your map
-2. Add an entry to `maps/maps.json`
-3. Push to `main`
+| Option | When to use |
+|--------|-------------|
+| Plain HTML | CDN-only map, no build step |
+| npm/Vite | Map needs a build step (`package.json` with `"build"` script) |
+| Git submodule | Map lives in its own repository |
+
+**Submodule quick start:**
+```bash
+git submodule add https://github.com/<user>/<repo> maps/<id>
+git commit -m "add: <name> as submodule"
+git push
+```
+The build script auto-detects `package.json` and builds it. GH Actions fetches submodules automatically.
 
 ## Tech
 
-- No framework, no build step (by default)
-- Libraries loaded via CDN per-map
 - GitHub Actions → GitHub Pages
+- `scripts/build.js` — auto-detects plain HTML vs npm-built maps
+- Libraries loaded via CDN (plain maps) or bundled via Vite (npm maps)
+- Git submodules supported for external map repos
