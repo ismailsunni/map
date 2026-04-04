@@ -1,0 +1,3 @@
+[submodule "maps/kopdar-pyjogja"]
+	path = maps/kopdar-pyjogja
+	url = https://github.com/ismailsunni/kopdar-pyjogja.git

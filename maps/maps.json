@@ -100,6 +100,21 @@
     ]
   },
   {
+    "id": "kopdar-pyjogja",
+    "title": "Kopdar PyJogja",
+    "description": "Peta sejarah pertemuan komunitas Python Jogja sejak 2016. Filter by tahun, tipe acara, dan lokasi — dengan clustering dan panel daftar.",
+    "library": "OpenLayers",
+    "libraryColor": "#4a90d9",
+    "thumbnail": "thumb.png",
+    "tags": [
+      "community",
+      "history",
+      "clustering",
+      "yogyakarta",
+      "python"
+    ]
+  },
+  {
     "id": "cesium-globe",
     "title": "3D Globe",
     "description": "An interactive 3D globe using CesiumJS. Rotate and zoom the entire Earth.",
